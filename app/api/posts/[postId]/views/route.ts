@@ -12,7 +12,8 @@ export async function POST(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const postId = params.postId;
+    const resolvedParams = await Promise.resolve(params);
+    const { postId } = resolvedParams;
 
     // Check if user has already viewed this post
     const existingView = await db.view.findUnique({
@@ -74,7 +75,8 @@ export async function GET(
       return new NextResponse("Unauthorized", { status: 401 });
     }
 
-    const postId = params.postId;
+    const resolvedParams = await Promise.resolve(params);
+    const { postId } = resolvedParams;
 
     const views = await db.view.findMany({
       where: {

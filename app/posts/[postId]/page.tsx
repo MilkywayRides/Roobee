@@ -97,8 +97,18 @@ async function getPost(postId: string) {
   }
 }
 
+export async function generateMetadata({ params }: PostPageProps) {
+  const resolvedParams = await Promise.resolve(params);
+  const post = await getPost(resolvedParams.postId);
+  return {
+    title: post?.title || 'Post Not Found',
+    description: post?.excerpt || '',
+  };
+}
+
 export default async function PostPage({ params }: PostPageProps) {
-  const post = await getPost(params.postId);
+  const resolvedParams = await Promise.resolve(params);
+  const post = await getPost(resolvedParams.postId);
   const session = await auth();
 
   if (!post) {
