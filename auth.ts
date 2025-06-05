@@ -7,7 +7,6 @@ import authConfig from '@/auth.config';
 import { getUserById } from '@/data/user';
 import { getAccountByUserId } from '@/data/account';
 import { getTwoFactorConfirmationByUserId } from '@/data/two-factor-confirmation';
-import { authOptions } from "@/lib/auth";
 
 export const {
   handlers: { GET, POST },
@@ -34,30 +33,25 @@ export const {
   },
   callbacks: {
     async signIn({ user, account }) {
-      // Skip email verification check for OAuth
       if (account?.provider !== 'credentials') {
         return true;
       }
 
       const existingUser = await getUserById(user.id);
 
-      // Prevent unverified email sign in
       if (!existingUser?.emailVerified) {
         return false;
       }
 
-      // Check if 2FA enabled
       if (existingUser.isTwoFactorEnabled) {
         const twoFactorConfirmation = await getTwoFactorConfirmationByUserId(
           existingUser.id
         );
 
-        // Prevent unconfirmed 2FA sign in
         if (!twoFactorConfirmation) {
           return false;
         }
 
-        // Delete 2FA confirmation for next sign in
         await db.twoFactorConfirmation.delete({
           where: {
             id: twoFactorConfirmation.id
@@ -78,9 +72,6 @@ export const {
 
       if (session.user) {
         session.user.isTwoFactorEnabled = token.isTwoFactorEnabled as boolean;
-      }
-
-      if (session.user) {
         session.user.name = token.name;
         session.user.email = token.email;
         session.user.tempEmail = token.tempEmail as string | null;
@@ -95,10 +86,7 @@ export const {
       }
 
       const existingUser = await getUserById(token.sub);
-
-      if (!existingUser) {
-        return token;
-      }
+      if (!existingUser) return token;
 
       const existingAccount = await getAccountByUserId(existingUser.id);
 
@@ -113,13 +101,11 @@ export const {
     }
   },
   adapter: PrismaAdapter(db),
-  session: { 
+  session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   secret: process.env.AUTH_SECRET,
   trustHost: true,
   ...authConfig
 });
-
-export const { auth: authOptionsAuth, signIn: authOptionsSignIn, signOut: authOptionsSignOut } = NextAuth(authOptions);
