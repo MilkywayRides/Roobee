@@ -1,0 +1,301 @@
+/* Monaco Editor OneDark Pro Theme Overrides */
+.monaco-editor {
+  background-color: #1E1E1E !important;
+}
+
+.monaco-editor .margin {
+  background-color: #1E1E1E !important;
+}
+
+.monaco-editor .monaco-editor-background {
+  background-color: #1E1E1E !important;
+}
+
+.monaco-editor .line-numbers {
+  color: #495162 !important;
+}
+
+.monaco-editor .current-line {
+  background-color: #2c323c !important;
+  border: none !important;
+}
+
+.monaco-editor .margin-view-overlays .current-line {
+  background-color: #2c323c !important;
+  border: none !important;
+}
+
+.monaco-editor .view-overlays .current-line {
+  background-color: #2c323c !important;
+  border: none !important;
+}
+
+.monaco-editor .line-numbers.active-line-number {
+  color: #abb2bf !important;
+}
+
+.monaco-editor .view-lines {
+  color: #abb2bf !important;
+}
+
+/* Syntax highlighting */
+.monaco-editor .token.comment {
+  color: #5c6370 !important;
+  font-style: italic !important;
+}
+
+.monaco-editor .token.string {
+  color: #98c379 !important;
+}
+
+.monaco-editor .token.number {
+  color: #d19a66 !important;
+}
+
+.monaco-editor .token.keyword {
+  color: #c678dd !important;
+}
+
+.monaco-editor .token.function {
+  color: #61afef !important;
+}
+
+.monaco-editor .token.class {
+  color: #e5c07b !important;
+}
+
+.monaco-editor .token.variable {
+  color: #e06c75 !important;
+}
+
+.monaco-editor .token.parameter {
+  color: #d19a66 !important;
+}
+
+.monaco-editor .token.property {
+  color: #e06c75 !important;
+}
+
+.monaco-editor .token.operator {
+  color: #56b6c2 !important;
+}
+
+.monaco-editor .token.type {
+  color: #e5c07b !important;
+}
+
+/* Selection */
+.monaco-editor .selected-text {
+  background-color: #3e4451 !important;
+}
+
+/* Scrollbar */
+.monaco-editor .scrollbar {
+  background-color: #1E1E1E !important;
+}
+
+.monaco-editor .scrollbar .slider {
+  background-color: #3e4451 !important;
+}
+
+.monaco-editor .scrollbar .slider:hover {
+  background-color: #4b5363 !important;
+}
+
+.monaco-editor .scrollbar .slider.active {
+  background-color: #4b5363 !important;
+}
+
+/* Minimap */
+.monaco-editor .minimap {
+  background-color: #1E1E1E !important;
+}
+
+.monaco-editor .minimap .minimap-slider {
+  background-color: #3e4451 !important;
+}
+
+.monaco-editor .minimap .minimap-slider:hover {
+  background-color: #4b5363 !important;
+}
+
+.monaco-editor .minimap .minimap-slider.active {
+  background-color: #4b5363 !important;
+}
+
+/* Find/Replace */
+.monaco-editor .find-widget {
+  background-color: #1E1E1E !important;
+  border: 1px solid #3e4451 !important;
+}
+
+.monaco-editor .find-widget input {
+  background-color: #21252b !important;
+  color: #abb2bf !important;
+  border: 1px solid #3e4451 !important;
+}
+
+.monaco-editor .find-widget button {
+  background-color: #21252b !important;
+  color: #abb2bf !important;
+  border: 1px solid #3e4451 !important;
+}
+
+.monaco-editor .find-widget button:hover {
+  background-color: #3e4451 !important;
+}
+
+/* Hover */
+.monaco-editor .hover {
+  background-color: #282c34 !important;
+  border: 1px solid #3e4451 !important;
+  color: #abb2bf !important;
+}
+
+/* Suggestions */
+.monaco-editor .suggest-widget {
+  background-color: #282c34 !important;
+  border: 1px solid #3e4451 !important;
+}
+
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row {
+  color: #abb2bf !important;
+}
+
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused {
+  background-color: #3e4451 !important;
+}
+
+/* Line highlight */
+.monaco-editor .lineHighlight {
+  background-color: #2c323c !important;
+  border: none !important;
+}
+
+/* Bracket matching */
+.monaco-editor .bracket-match {
+  background-color: #3e4451 !important;
+  border: 1px solid #4b5363 !important;
+}
+
+/* Word highlight */
+.monaco-editor .wordHighlight {
+  background-color: #3e4451 !important;
+  border: 1px solid #4b5363 !important;
+}
+
+/* Word highlight strong */
+.monaco-editor .wordHighlightStrong {
+  background-color: #3e4451 !important;
+  border: 1px solid #4b5363 !important;
+}
+
+/* Error and warning decorations */
+.monaco-editor .squiggly-error {
+  border-bottom: 2px solid #e06c75 !important;
+}
+
+.monaco-editor .squiggly-warning {
+  border-bottom: 2px solid #e5c07b !important;
+}
+
+.monaco-editor .squiggly-info {
+  border-bottom: 2px solid #61afef !important;
+}
+
+.monaco-editor .squiggly-hint {
+  border-bottom: 2px solid #56b6c2 !important;
+}
+
+/* Indent guides */
+.monaco-editor .indent-guide {
+  background-color: #3e4451 !important;
+}
+
+.monaco-editor .indent-guide.active {
+  background-color: #4b5363 !important;
+}
+
+/* Whitespace */
+.monaco-editor .whitespace {
+  color: #3e4451 !important;
+}
+
+/* Cursor */
+.monaco-editor .cursor {
+  background-color: #528bff !important;
+  width: 2px !important;
+}
+
+/* Selection */
+.monaco-editor .selection {
+  background-color: #3e4451 !important;
+}
+
+/* Inactive selection */
+.monaco-editor .inactive-selection {
+  background-color: #2c323c !important;
+}
+
+/* Find match */
+.monaco-editor .findMatch {
+  background-color: #3e4451 !important;
+  border: 1px solid #4b5363 !important;
+}
+
+/* Find match highlight */
+.monaco-editor .findMatchHighlight {
+  background-color: #3e4451 !important;
+  border: 1px solid #4b5363 !important;
+}
+
+/* Find range highlight */
+.monaco-editor .findRangeHighlight {
+  background-color: #2c323c !important;
+}
+
+/* Hover highlight */
+.monaco-editor .hoverHighlight {
+  background-color: #2c323c !important;
+}
+
+/* Range highlight */
+.monaco-editor .rangeHighlight {
+  background-color: #2c323c !important;
+}
+
+/* Selection highlight */
+.monaco-editor .selectionHighlight {
+  background-color: #3e4451 !important;
+}
+
+/* Word highlight strong */
+.monaco-editor .wordHighlightStrong {
+  background-color: #3e4451 !important;
+  border: 1px solid #4b5363 !important;
+}
+
+/* Bracket pair colorization */
+.monaco-editor .bracket-pair-colorization-1 {
+  color: #e06c75 !important;
+}
+
+.monaco-editor .bracket-pair-colorization-2 {
+  color: #98c379 !important;
+}
+
+.monaco-editor .bracket-pair-colorization-3 {
+  color: #d19a66 !important;
+}
+
+.monaco-editor .bracket-pair-colorization-4 {
+  color: #61afef !important;
+}
+
+.monaco-editor .bracket-pair-colorization-5 {
+  color: #c678dd !important;
+}
+
+.monaco-editor .bracket-pair-colorization-6 {
+  color: #56b6c2 !important;
+} 

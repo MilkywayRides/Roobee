@@ -11,6 +11,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import Editor, { loader } from '@monaco-editor/react';
 import { toast } from 'react-hot-toast';
+import '@/app/styles/monaco.css';
 import { 
   GitBranch, 
   Star, 
@@ -41,15 +42,18 @@ import {
   Menu,
   Sun,
   Moon,
-  Python,
   Image as ImageIcon,
-  Markdown,
-  FileJs,
-  FileTs,
   FileJson,
-  FileCode2
+  FileCode2,
+  Download as DownloadIcon
 } from 'lucide-react';
 import { AvatarButton } from "@/components/ui/avatar-button";
+import JSZip from 'jszip';
+import { Terminal } from 'xterm';
+import { FitAddon } from 'xterm-addon-fit';
+import { WebLinksAddon } from 'xterm-addon-web-links';
+import 'xterm/css/xterm.css';
+import dynamic from 'next/dynamic';
 
 interface FileNode {
   name: string;
@@ -264,6 +268,13 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
 }) {
   const [isExpanded, setIsExpanded] = useState(level < 2);
   const { theme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const currentTheme = !mounted ? 'light' : theme;
 
   const handleClick = () => {
     if (node.type === 'folder') {
@@ -278,23 +289,23 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
     switch (ext) {
       case 'js':
       case 'jsx':
-        return theme === 'dark' ? 'bg-yellow-400' : 'bg-yellow-500';
+        return currentTheme === 'dark' ? 'bg-yellow-400' : 'bg-yellow-500';
       case 'ts':
       case 'tsx':
-        return theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500';
+        return currentTheme === 'dark' ? 'bg-blue-400' : 'bg-blue-500';
       case 'json':
-        return theme === 'dark' ? 'bg-green-400' : 'bg-green-500';
+        return currentTheme === 'dark' ? 'bg-green-400' : 'bg-green-500';
       case 'css':
       case 'scss':
-        return theme === 'dark' ? 'bg-purple-400' : 'bg-purple-500';
+        return currentTheme === 'dark' ? 'bg-purple-400' : 'bg-purple-500';
       case 'html':
-        return theme === 'dark' ? 'bg-orange-400' : 'bg-orange-500';
+        return currentTheme === 'dark' ? 'bg-orange-400' : 'bg-orange-500';
       case 'md':
-        return theme === 'dark' ? 'bg-gray-400' : 'bg-gray-500';
+        return currentTheme === 'dark' ? 'bg-gray-400' : 'bg-gray-500';
       case 'py':
-        return theme === 'dark' ? 'bg-green-300' : 'bg-green-600';
+        return currentTheme === 'dark' ? 'bg-green-300' : 'bg-green-600';
       default:
-        return theme === 'dark' ? 'bg-gray-300' : 'bg-gray-400';
+        return currentTheme === 'dark' ? 'bg-gray-300' : 'bg-gray-400';
     }
   };
 
@@ -304,7 +315,7 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
     <div>
       <div 
         className={`flex items-center py-1.5 px-3 cursor-pointer rounded-sm group transition-colors duration-200 ${
-          theme === 'dark'
+          currentTheme === 'dark'
             ? 'hover:bg-[#2A2D2E] text-gray-200'
             : 'hover:bg-gray-100 text-gray-700'
         }`}
@@ -315,29 +326,29 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
           <div className="flex items-center">
             {isExpanded ? (
               <ChevronDown className={`w-4 h-4 mr-2 ${
-                theme === 'dark' ? 'text-white' : 'text-black'
+                currentTheme === 'dark' ? 'text-white' : 'text-black'
               }`} />
             ) : (
               <ChevronRight className={`w-4 h-4 mr-2 ${
-                theme === 'dark' ? 'text-white' : 'text-black'
+                currentTheme === 'dark' ? 'text-white' : 'text-black'
               }`} />
             )}
             <Folder className={`w-4 h-4 mr-2 ${
-              theme === 'dark' ? 'text-white' : 'text-black'
+              currentTheme === 'dark' ? 'text-white' : 'text-black'
             }`} />
           </div>
         ) : (
           <div className="flex items-center">
             <div className="w-6 h-4 mr-2 flex items-center">
               <FileIconComponent className={`w-4 h-4 ${
-                theme === 'dark' ? 'text-white' : 'text-black'
+                currentTheme === 'dark' ? 'text-white' : 'text-black'
               }`} />
             </div>
             <div className={`w-2 h-2 rounded-full mr-2 ${getLanguageColor(node.name)} opacity-75`} />
           </div>
         )}
         <span className={`text-sm font-medium truncate ${
-          theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+          currentTheme === 'dark' ? 'text-gray-200' : 'text-gray-700'
         }`}>
           {node.name}
         </span>
@@ -352,7 +363,7 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
             })
             .map((child) => (
               <FileTreeNode 
-                key={`${child.path}-${child.type}-${child.name}`}
+                key={child.appwriteId || `${child.path}-${child.type}-${child.name}`}
                 node={child} 
                 level={level + 1} 
                 onFileClick={onFileClick}
@@ -375,25 +386,21 @@ export default function ProjectView({ project }: { project: Project }) {
   const { theme, setTheme } = useTheme();
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const [terminalHeight, setTerminalHeight] = useState(300); // Default height in pixels
+  const terminalRef = useRef<HTMLDivElement>(null);
+  const xtermRef = useRef<Terminal | null>(null);
+  const isDraggingRef = useRef(false);
+  const startYRef = useRef(0);
+  const startHeightRef = useRef(0);
 
   // Handle initial mount
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Handle theme changes
-  useEffect(() => {
-    if (!mounted) return;
-
-    const updateTheme = () => {
-      if (monacoRef.current) {
-        const currentTheme = theme === 'dark' ? 'custom-dark' : 'custom-light';
-        monacoRef.current.editor.setTheme(currentTheme);
-      }
-    };
-
-    updateTheme();
-  }, [theme, mounted]);
+  // Default to light theme until mounted
+  const currentTheme = !mounted ? 'light' : theme;
 
   // Initialize Monaco editor
   const handleEditorDidMount = (editor: any, monaco: any) => {
@@ -405,8 +412,8 @@ export default function ProjectView({ project }: { project: Project }) {
     monaco.editor.defineTheme('custom-light', lightTheme);
 
     // Set initial theme
-    const currentTheme = theme === 'dark' ? 'custom-dark' : 'custom-light';
-    monaco.editor.setTheme(currentTheme);
+    const editorTheme = currentTheme === 'dark' ? 'custom-dark' : 'custom-light';
+    monaco.editor.setTheme(editorTheme);
 
     // Set editor options
     editor.updateOptions({
@@ -418,9 +425,9 @@ export default function ProjectView({ project }: { project: Project }) {
       scrollbar: {
         vertical: 'visible',
         horizontal: 'visible',
-        useShadows: false,
-        verticalScrollbarSize: 10,
-        horizontalScrollbarSize: 10,
+        useShadows: true,
+        verticalScrollbarSize: 16,
+        horizontalScrollbarSize: 16,
       },
       minimap: {
         enabled: !isMobile,
@@ -437,6 +444,14 @@ export default function ProjectView({ project }: { project: Project }) {
     });
   };
 
+  // Handle theme changes
+  useEffect(() => {
+    if (!mounted || !monacoRef.current) return;
+
+    const editorTheme = currentTheme === 'dark' ? 'custom-dark' : 'custom-light';
+    monacoRef.current.editor.setTheme(editorTheme);
+  }, [currentTheme, mounted]);
+
   // Check for mobile viewport
   useEffect(() => {
     const checkMobile = () => {
@@ -452,6 +467,211 @@ export default function ProjectView({ project }: { project: Project }) {
     window.addEventListener('resize', checkMobile);
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
+
+  // Initialize terminal
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
+    if (isTerminalOpen && terminalRef.current && !xtermRef.current) {
+      Promise.all([
+        import('xterm'),
+        import('xterm-addon-fit'),
+        import('xterm-addon-web-links')
+      ]).then(([{ Terminal }, { FitAddon }, { WebLinksAddon }]) => {
+        if (!terminalRef.current) return;
+
+        const term = new Terminal({
+          cursorBlink: true,
+          fontSize: 14,
+          fontFamily: 'JetBrains Mono, Menlo, Monaco, Consolas, monospace',
+          theme: {
+            background: currentTheme === 'dark' ? '#1E1E1E' : '#FFFFFF',
+            foreground: currentTheme === 'dark' ? '#D4D4D4' : '#000000',
+            cursor: currentTheme === 'dark' ? '#FFFFFF' : '#000000',
+          },
+        });
+
+        const fitAddon = new FitAddon();
+        const webLinksAddon = new WebLinksAddon();
+
+        term.loadAddon(fitAddon);
+        term.loadAddon(webLinksAddon);
+        term.open(terminalRef.current);
+        fitAddon.fit();
+
+        // Add some initial content
+        term.writeln('Welcome to the project terminal!');
+        term.writeln('Available commands:');
+        term.writeln('  ls     - List project files and directories');
+        term.writeln('  clear  - Clear the terminal');
+        term.writeln('  help   - Show this help message');
+        term.write('\r\n$ ');
+
+        // Command handling
+        let currentLine = '';
+        term.onKey(({ key, domEvent }) => {
+          const printable = !domEvent.altKey && !domEvent.ctrlKey && !domEvent.metaKey;
+
+          if (domEvent.keyCode === 13) { // Enter
+            term.write('\r\n');
+            handleCommand(currentLine.trim());
+            currentLine = '';
+            term.write('$ ');
+          } else if (domEvent.keyCode === 8) { // Backspace
+            if (currentLine.length > 0) {
+              currentLine = currentLine.slice(0, -1);
+              term.write('\b \b');
+            }
+          } else if (printable) {
+            currentLine += key;
+            term.write(key);
+          }
+        });
+
+        const handleCommand = (command: string) => {
+          if (!xtermRef.current) return;
+          const terminal = xtermRef.current;
+
+          switch (command.toLowerCase()) {
+            case 'ls':
+              displayFileList(fileTree, terminal);
+              break;
+            case 'tree':
+              displayFileTree(fileTree, terminal);
+              break;
+            case 'clear':
+              terminal.clear();
+              break;
+            case 'help':
+              terminal.writeln('Available commands:');
+              terminal.writeln('  ls     - List files and directories');
+              terminal.writeln('  tree   - Display directory structure as a tree');
+              terminal.writeln('  clear  - Clear the terminal');
+              terminal.writeln('  help   - Show this help message');
+              break;
+            case '':
+              break;
+            default:
+              terminal.writeln(`Command not found: ${command}`);
+          }
+        };
+
+        const displayFileList = (nodes: FileNode[], terminal: Terminal) => {
+          // Calculate column widths
+          const maxSize = Math.max(...nodes.map(n => n.size.toString().length));
+          const maxName = Math.max(...nodes.map(n => n.name.length));
+          
+          // Sort nodes: directories first, then files, both alphabetically
+          const sortedNodes = [...nodes].sort((a, b) => {
+            if (a.type === b.type) {
+              return a.name.localeCompare(b.name);
+            }
+            return a.type === 'folder' ? -1 : 1;
+          });
+
+          sortedNodes.forEach(node => {
+            const prefix = node.type === 'folder' ? 'd' : '-';
+            const permissions = 'rw-r--r--';
+            const fileSize = node.type === 'folder' ? '4096' : node.size.toString().padStart(maxSize);
+            const fileDate = new Date().toLocaleDateString('en-US', {
+              month: 'numeric',
+              day: 'numeric',
+              year: 'numeric'
+            });
+            const fileName = node.name.padEnd(maxName);
+            
+            // Format: drwxr-xr-x 1 user group 4096 Mar 15 2024 filename
+            terminal.writeln(`${prefix}${permissions} 1 user group ${fileSize} ${fileDate} ${fileName}`);
+            
+            if (node.type === 'folder' && node.children) {
+              displayFileList(node.children, terminal);
+            }
+          });
+        };
+
+        const displayFileTree = (nodes: FileNode[], terminal: Terminal, prefix = '', isLast = true) => {
+          nodes.forEach((node, index) => {
+            const isLastNode = index === nodes.length - 1;
+            const currentPrefix = prefix + (isLast ? '    ' : '│   ');
+            const nodePrefix = prefix + (isLast ? '└── ' : '├── ');
+            
+            // Print current node
+            terminal.writeln(`${nodePrefix}${node.name}${node.type === 'folder' ? '/' : ''}`);
+            
+            // Recursively print children
+            if (node.type === 'folder' && node.children) {
+              displayFileTree(node.children, terminal, currentPrefix, isLastNode);
+            }
+          });
+        };
+
+        xtermRef.current = term;
+
+        // Handle window resize
+        const handleResize = () => {
+          fitAddon.fit();
+        };
+        window.addEventListener('resize', handleResize);
+
+        cleanup = () => {
+          window.removeEventListener('resize', handleResize);
+          term.dispose();
+          xtermRef.current = null;
+        };
+      });
+    }
+
+    return () => {
+      if (cleanup) {
+        cleanup();
+      }
+    };
+  }, [isTerminalOpen, currentTheme]);
+
+  // Handle keyboard shortcut
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey && e.key === '`') {
+        e.preventDefault();
+        setIsTerminalOpen(prev => !prev);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
+  // Handle terminal resize
+  const handleMouseDown = (e: React.MouseEvent) => {
+    isDraggingRef.current = true;
+    startYRef.current = e.clientY;
+    startHeightRef.current = terminalHeight;
+    document.body.style.cursor = 'ns-resize';
+    document.body.style.userSelect = 'none';
+  };
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current) return;
+      const deltaY = startYRef.current - e.clientY;
+      const newHeight = Math.max(100, Math.min(600, startHeightRef.current + deltaY));
+      setTerminalHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      isDraggingRef.current = false;
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [terminalHeight]);
 
   const handleFileClick = async (file: FileNode) => {
     if (file.type === 'folder') return;
@@ -531,18 +751,18 @@ export default function ProjectView({ project }: { project: Project }) {
   const fileTree = buildFileTree(project.files);
 
   return (
-    <div className={`min-h-screen transition-colors duration-200 ${
-      !mounted ? 'bg-white text-gray-900' : theme === 'dark' ? 'bg-[#1e1e1e] text-[#d4d4d4]' : 'bg-white text-gray-900'
+    <div suppressHydrationWarning className={`h-screen overflow-hidden transition-colors duration-200 ${
+      currentTheme === 'dark' ? 'bg-[#1e1e1e] text-gray-200' : 'bg-white text-gray-900'
     }`}>
       {/* Activity Bar */}
       <div className={`fixed left-0 top-0 h-full w-12 transition-colors duration-200 ${
-        !mounted ? 'bg-gray-100' : theme === 'dark' ? 'bg-[#333333]' : 'bg-gray-100'
+        currentTheme === 'dark' ? 'bg-[#333333]' : 'bg-gray-100'
       } flex flex-col items-center py-2 z-50`}>
         <Button 
           variant="ghost" 
           size="icon" 
           className={`h-10 w-10 transition-colors duration-200 ${
-            theme === 'dark' 
+            currentTheme === 'dark' 
               ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
               : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
           } md:hidden`}
@@ -551,42 +771,42 @@ export default function ProjectView({ project }: { project: Project }) {
           <Menu className="h-5 w-5" />
         </Button>
         <Button variant="ghost" size="icon" className={`h-10 w-10 transition-colors duration-200 ${
-          theme === 'dark' 
+          currentTheme === 'dark' 
             ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
         }`} onClick={() => setActiveTab('explorer')}>
           <FileText className="h-5 w-5" />
         </Button>
         <Button variant="ghost" size="icon" className={`h-10 w-10 transition-colors duration-200 ${
-          theme === 'dark' 
+          currentTheme === 'dark' 
             ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
         }`} onClick={() => setActiveTab('search')}>
           <Search className="h-5 w-5" />
         </Button>
         <Button variant="ghost" size="icon" className={`h-10 w-10 transition-colors duration-200 ${
-          theme === 'dark' 
+          currentTheme === 'dark' 
             ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
         }`} onClick={() => setActiveTab('source')}>
           <Code2 className="h-5 w-5" />
         </Button>
         <Button variant="ghost" size="icon" className={`h-10 w-10 transition-colors duration-200 ${
-          theme === 'dark' 
+          currentTheme === 'dark' 
             ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
         }`} onClick={() => setActiveTab('git')}>
           <GitPullRequest className="h-5 w-5" />
         </Button>
         <Button variant="ghost" size="icon" className={`h-10 w-10 transition-colors duration-200 ${
-          theme === 'dark' 
+          currentTheme === 'dark' 
             ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
         }`} onClick={() => setActiveTab('debug')}>
           <Bug className="h-5 w-5" />
         </Button>
         <Button variant="ghost" size="icon" className={`h-10 w-10 transition-colors duration-200 ${
-          theme === 'dark' 
+          currentTheme === 'dark' 
             ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
             : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
         }`} onClick={() => setActiveTab('extensions')}>
@@ -600,23 +820,29 @@ export default function ProjectView({ project }: { project: Project }) {
       <div className="pl-12">
         {/* Header */}
         <div className={`sticky top-0 z-40 w-full border-b transition-colors duration-200 ${
-          theme === 'dark' ? 'border-[#404040] bg-[#1e1e1e]' : 'border-gray-200 bg-white'
+          currentTheme === 'dark' ? 'border-[#404040] bg-[#1e1e1e]' : 'border-gray-200 bg-white'
         }`}>
-          <div className="flex h-10 items-center px-4">
+          <div className="flex h-10 items-center justify-between px-4">
             <div className="flex items-center space-x-3 overflow-hidden">
               <div className="flex items-center space-x-2 min-w-0">
-                <User className={`h-4 w-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} flex-shrink-0`} />
-                <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} truncate`}>
-                  {project.user?.name || 'owner'}
+                <User className={`h-4 w-4 ${
+                  currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                } flex-shrink-0`} />
+                <span className={`text-sm ${
+                  currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                } truncate`}>
+                  {project.user?.name || 'Anonymous'}
                 </span>
-                <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>/</span>
-                <h1 className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'} truncate`}>
+                <span className={currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>/</span>
+                <h1 className={`text-sm font-medium ${
+                  currentTheme === 'dark' ? 'text-gray-200' : 'text-gray-900'
+                } truncate`}>
                   {project.name}
                 </h1>
               </div>
               {!project.isFree && (
                 <Badge variant="outline" className={`${
-                  theme === 'dark' 
+                  currentTheme === 'dark' 
                     ? 'bg-[#404040] text-gray-200 border-[#404040]' 
                     : 'bg-gray-100 text-gray-700 border-gray-200'
                 } flex-shrink-0`}>
@@ -624,15 +850,61 @@ export default function ProjectView({ project }: { project: Project }) {
                 </Badge>
               )}
             </div>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              className={`relative group overflow-hidden ${
+                currentTheme === 'dark'
+                  ? 'border-[#404040] text-gray-300 hover:text-white hover:bg-[#404040] hover:border-[#404040]'
+                  : 'border-gray-200 text-gray-600 hover:text-gray-900 hover:bg-gray-100 hover:border-gray-300'
+              } transform transition-all duration-300 hover:scale-105 active:scale-95`}
+              onClick={async () => {
+                try {
+                  // Create a zip file containing all project files
+                  const zip = new JSZip();
+                  
+                  // Add each file to the zip
+                  for (const file of project.files) {
+                    const response = await fetch(`/api/files/content/${file.appwriteId}`);
+                    if (!response.ok) throw new Error('Failed to fetch file content');
+                    const content = await response.text();
+                    zip.file(file.fileName, content);
+                  }
+                  
+                  // Generate and download the zip file
+                  const blob = await zip.generateAsync({ type: 'blob' });
+                  const url = window.URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `${project.name}.zip`;
+                  document.body.appendChild(a);
+                  a.click();
+                  document.body.removeChild(a);
+                  window.URL.revokeObjectURL(url);
+                  
+                  toast.success('Project downloaded successfully!');
+                } catch (error) {
+                  console.error('Download error:', error);
+                  toast.error('Failed to download project');
+                }
+              }}
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-shimmer" />
+              <div className="flex items-center gap-2 relative z-10 group-hover:gap-3 transition-all duration-300">
+                <Download className="h-4 w-4 transform transition-transform duration-300 group-hover:-translate-y-1" />
+                <span className="text-sm font-medium">Download</span>
+              </div>
+            </Button>
           </div>
         </div>
 
         {/* Split View */}
-        <div className="flex h-[calc(100vh-2.5rem)]">
+        <div className="flex h-[calc(100vh-2.5rem)] overflow-hidden">
           {/* Sidebar */}
           <div 
             className={`fixed md:static inset-y-0 left-12 z-40 w-64 transition-all duration-200 ${
-              theme === 'dark' 
+              currentTheme === 'dark' 
                 ? 'bg-[#252526] border-[#404040]' 
                 : 'bg-[#f3f3f3] border-gray-200'
             } border-r ${
@@ -640,16 +912,16 @@ export default function ProjectView({ project }: { project: Project }) {
             } md:translate-x-0`}
           >
             <div className={`h-10 flex items-center px-4 border-b transition-colors duration-200 ${
-              theme === 'dark' 
+              currentTheme === 'dark' 
                 ? 'border-[#404040] bg-[#252526]' 
                 : 'border-gray-200 bg-[#f3f3f3]'
             }`}>
               <span className={`text-sm font-medium ${
-                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'
               }`}>EXPLORER</span>
             </div>
             <div className={`overflow-y-auto h-[calc(100%-2.5rem)] ${
-              theme === 'dark' ? 'bg-[#252526]' : 'bg-[#f3f3f3]'
+              currentTheme === 'dark' ? 'bg-[#252526]' : 'bg-[#f3f3f3]'
             }`}>
               {fileTree.map((node, index) => (
                 <FileTreeNode 
@@ -662,51 +934,50 @@ export default function ProjectView({ project }: { project: Project }) {
           </div>
 
           {/* Editor Area */}
-          <div className={`flex-1 transition-colors duration-200 ${
-            theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white'
-          } min-w-0`}>
+          <div 
+            className={`flex-1 transition-colors duration-200 ${
+              currentTheme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white'
+            } min-w-0 overflow-hidden`}
+            style={{
+              paddingBottom: isTerminalOpen ? `${terminalHeight}px` : '0'
+            }}
+          >
             {editorTabs.length > 0 ? (
               <div className="h-full flex flex-col">
                 {/* Editor Tabs */}
                 <div className={`h-10 flex items-center border-b transition-colors duration-200 ${
-                  theme === 'dark' 
-                    ? 'border-[#404040] bg-[#252526]' 
-                    : 'border-gray-200 bg-gray-50'
+                  currentTheme === 'dark' ? 'border-[#404040] bg-[#252526]' : 'border-gray-200 bg-white'
                 } overflow-x-auto`}>
                   {editorTabs.map((tab) => (
                     <div
                       key={tab.file.appwriteId}
                       className={`group flex items-center h-full px-4 border-r transition-colors duration-200 ${
-                        theme === 'dark' ? 'border-[#404040]' : 'border-gray-200'
+                        currentTheme === 'dark' ? 'border-[#404040]' : 'border-gray-200'
                       } cursor-pointer flex-shrink-0 ${
                         tab.isActive 
-                          ? theme === 'dark' 
-                            ? 'bg-[#1e1e1e]' 
-                            : 'bg-white'
-                          : theme === 'dark'
-                            ? 'bg-[#2d2d2d] hover:bg-[#2d2d2d]'
-                            : 'bg-gray-50 hover:bg-gray-100'
+                          ? currentTheme === 'dark' ? 'bg-[#404040]' : 'bg-gray-200'
+                          : currentTheme === 'dark' ? 'bg-[#2d2d2d]' : 'bg-gray-50'
                       }`}
                       onClick={() => handleTabClick(tab)}
                     >
                       <File className={`w-4 h-4 mr-2 ${
-                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'
                       } flex-shrink-0`} />
                       <span className={`text-sm ${
-                        theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
+                        currentTheme === 'dark' ? 'text-gray-200' : 'text-gray-900'
                       } whitespace-nowrap truncate max-w-[150px]`}>
                         {tab.file.name}
                       </span>
                       <button
                         className={`ml-2 p-1 rounded transition-colors duration-200 ${
-                          theme === 'dark' 
+                          currentTheme === 'dark' 
                             ? 'hover:bg-[#404040]' 
                             : 'hover:bg-gray-200'
                         } opacity-0 group-hover:opacity-100 flex-shrink-0`}
                         onClick={(e) => handleTabClose(e, tab)}
                       >
                         <X className={`w-3 h-3 ${
-                          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                          currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'
                         }`} />
                       </button>
                     </div>
@@ -716,32 +987,52 @@ export default function ProjectView({ project }: { project: Project }) {
                 {/* Editor */}
                 <div className="flex-1 min-h-0">
                   {fileContent ? (
-                    <Editor
-                      height="100%"
-                      defaultLanguage={getFileTypeInfo(selectedFile?.name || '').language}
-                      value={fileContent}
-                      onMount={handleEditorDidMount}
-                      options={{
-                        readOnly: true,
-                        minimap: { enabled: !isMobile },
-                        scrollBeyondLastLine: false,
-                        fontSize: isMobile ? 12 : 14,
-                        wordWrap: 'on',
-                        lineNumbers: 'on',
-                        renderLineHighlight: 'all',
-                        cursorBlinking: 'smooth',
-                        cursorSmoothCaretAnimation: 'on',
-                        smoothScrolling: true,
-                        mouseWheelZoom: true,
-                      }}
-                    />
+                    <div className="h-full overflow-auto">
+                      <Editor
+                        height="100%"
+                        defaultLanguage={getFileTypeInfo(selectedFile?.name || '').language}
+                        value={fileContent}
+                        onMount={handleEditorDidMount}
+                        options={{
+                          readOnly: true,
+                          minimap: { enabled: !isMobile },
+                          scrollBeyondLastLine: false,
+                          fontSize: isMobile ? 12 : 14,
+                          wordWrap: 'on',
+                          lineNumbers: 'on',
+                          renderLineHighlight: 'all',
+                          cursorBlinking: 'smooth',
+                          cursorSmoothCaretAnimation: 'on',
+                          smoothScrolling: true,
+                          mouseWheelZoom: true,
+                          scrollbar: {
+                            vertical: 'visible',
+                            horizontal: 'visible',
+                            useShadows: true,
+                            verticalScrollbarSize: 16,
+                            horizontalScrollbarSize: 16,
+                            verticalSliderSize: 12,
+                            horizontalSliderSize: 12,
+                            arrowSize: 13,
+                            verticalHasArrows: true,
+                            horizontalHasArrows: true,
+                          },
+                          overviewRulerBorder: true,
+                          overviewRulerLanes: 3,
+                          fixedOverflowWidgets: true,
+                        }}
+                        className="h-full"
+                      />
+                    </div>
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center space-y-4">
                         <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
-                          theme === 'dark' ? 'border-[#007acc]' : 'border-blue-500'
+                          currentTheme === 'dark' ? 'border-[#007acc]' : 'border-blue-500'
                         } mx-auto`}></div>
-                        <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>
+                        <p className={
+                          currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        }>
                           Loading file content...
                         </p>
                       </div>
@@ -753,9 +1044,11 @@ export default function ProjectView({ project }: { project: Project }) {
               <div className="flex items-center justify-center h-full">
                 <div className="text-center space-y-4">
                   <File className={`w-12 h-12 ${
-                    theme === 'dark' ? 'text-gray-400' : 'text-gray-300'
+                    currentTheme === 'dark' ? 'text-gray-400' : 'text-gray-300'
                   } mx-auto`} />
-                  <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>
+                  <p className={
+                    currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                  }>
                     Select a file to view its contents
                   </p>
                 </div>
@@ -764,6 +1057,48 @@ export default function ProjectView({ project }: { project: Project }) {
           </div>
         </div>
       </div>
+
+      {/* Terminal */}
+      {isTerminalOpen && (
+        <div 
+          className={`fixed bottom-0 left-[calc(12px+16rem)] right-0 border-t transition-colors duration-200 ${
+            currentTheme === 'dark' ? 'border-[#404040] bg-[#1E1E1E]' : 'border-gray-200 bg-white'
+          }`}
+          style={{ 
+            height: `${terminalHeight}px`,
+            width: isSidebarOpen ? 'calc(100% - 16rem - 3rem)' : 'calc(100% - 3rem)',
+            left: isSidebarOpen ? 'calc(16rem + 3rem)' : '3rem',
+            zIndex: 30
+          }}
+        >
+          <div 
+            className={`absolute top-0 left-0 right-0 h-1 cursor-ns-resize hover:bg-blue-500/50 transition-colors duration-200 ${
+              currentTheme === 'dark' ? 'bg-[#404040]' : 'bg-gray-200'
+            }`}
+            onMouseDown={handleMouseDown}
+          />
+          <div className="flex items-center justify-between px-4 py-2 border-b transition-colors duration-200 ${
+            currentTheme === 'dark' ? 'border-[#404040]' : 'border-gray-200'
+          }">
+            <span className={`text-sm font-medium ${
+              currentTheme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+            }`}>Terminal</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              className={`h-6 w-6 ${
+                currentTheme === 'dark'
+                  ? 'text-gray-300 hover:text-white hover:bg-[#404040]'
+                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-200'
+              }`}
+              onClick={() => setIsTerminalOpen(false)}
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div ref={terminalRef} className="h-[calc(100%-2.5rem)] p-2" />
+        </div>
+      )}
 
       {/* Mobile Overlay */}
       {isSidebarOpen && isMobile && (
