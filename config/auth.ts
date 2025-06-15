@@ -83,17 +83,17 @@ export const authOptions: NextAuthOptions = {
           where: { id: token.sub },
           select: { role: true },
         });
-        
-        if (user) {
-          session.user.role = user.role;
+        if (user && session.user) {
+          (session.user as any).role = user.role;
+          (session.user as any).id = token.sub;
         }
       }
-      
       return {
         ...session,
         user: {
           ...session.user,
           role: token.role,
+          id: token.sub,
         },
       };
     },

@@ -1,35 +1,16 @@
-import { Metadata } from "next";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/config/auth";
-import { redirect } from "next/navigation";
+"use client";
+
+import { useSession } from "next-auth/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, FileText, BarChart3, Activity, Settings } from "lucide-react";
-import { ExtendedSession } from "@/types";
+import { Users, Activity, FileText, BarChart3 } from "lucide-react";
 
-export const metadata: Metadata = {
-  title: "Admin Dashboard",
-  description: "Admin dashboard",
-};
-
-export default async function AdminPage() {
-  const session = (await getServerSession(authOptions)) as ExtendedSession | null;
-
-  if (!session?.user) {
-    redirect("/login");
-  }
-
-  const userName = session.user.name || "Admin";
+export default function AdminPage() {
+  const { data: session } = useSession();
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground">
-          Welcome back, {userName}!
-        </p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+    <div className="bg-card rounded-xl shadow-lg p-6 border">
+      <h1 className="text-2xl font-bold mb-6 text-foreground">Welcome, {session?.user?.name || "Admin"}</h1>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Users</CardTitle>
@@ -37,9 +18,7 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-muted-foreground">
-              +20.1% from last month
-            </p>
+            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
           </CardContent>
         </Card>
         <Card>
@@ -49,9 +28,7 @@ export default async function AdminPage() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">573</div>
-            <p className="text-xs text-muted-foreground">
-              +201 since last hour
-            </p>
+            <p className="text-xs text-muted-foreground">+201 since last hour</p>
           </CardContent>
         </Card>
         <Card>
@@ -60,10 +37,8 @@ export default async function AdminPage() {
             <FileText className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">45</div>
-            <p className="text-xs text-muted-foreground">
-              +5 new this week
-            </p>
+            <div className="text-2xl font-bold">12</div>
+            <p className="text-xs text-muted-foreground">+2 new reports</p>
           </CardContent>
         </Card>
         <Card>
@@ -72,78 +47,8 @@ export default async function AdminPage() {
             <BarChart3 className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">89.2%</div>
-            <p className="text-xs text-muted-foreground">
-              +2.1% from last month
-            </p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-        <Card className="col-span-4">
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <div className="h-9 w-9 rounded-full bg-muted" />
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium leading-none">
-                      User Activity {i}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Description of the activity
-                    </p>
-                  </div>
-                  <div className="ml-auto font-medium">2h ago</div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="col-span-3">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="flex items-center gap-4 rounded-lg border p-4">
-                <Users className="h-5 w-5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    Manage Users
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    View and manage user accounts
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 rounded-lg border p-4">
-                <FileText className="h-5 w-5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    Generate Reports
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Create and export reports
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center gap-4 rounded-lg border p-4">
-                <Settings className="h-5 w-5" />
-                <div className="space-y-1">
-                  <p className="text-sm font-medium leading-none">
-                    System Settings
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    Configure system preferences
-                  </p>
-                </div>
-              </div>
-            </div>
+            <div className="text-2xl font-bold">86%</div>
+            <p className="text-xs text-muted-foreground">+4% from last month</p>
           </CardContent>
         </Card>
       </div>
