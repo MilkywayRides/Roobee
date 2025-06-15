@@ -1,14 +1,15 @@
 // ProjectView.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useTheme } from "next-themes";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
-import Editor from '@monaco-editor/react';
+import Editor, { loader } from '@monaco-editor/react';
 import { toast } from 'react-hot-toast';
 import { 
   GitBranch, 
@@ -37,7 +38,9 @@ import {
   Bug,
   LayoutGrid,
   Settings2,
-  Menu
+  Menu,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 interface FileNode {
@@ -69,6 +72,115 @@ interface EditorTab {
   content: string;
   isActive: boolean;
 }
+
+// Configure Monaco loader
+loader.config({
+  paths: {
+    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
+  }
+});
+
+// Dark theme configuration
+const darkTheme = {
+  base: 'vs-dark' as const,
+  inherit: true,
+  rules: [
+    { token: 'comment', foreground: '6A9955' },
+    { token: 'keyword', foreground: 'C586C0' },
+    { token: 'string', foreground: 'CE9178' },
+    { token: 'number', foreground: 'B5CEA8' },
+    { token: 'regexp', foreground: 'D16969' },
+    { token: 'type', foreground: '4EC9B0' },
+    { token: 'class', foreground: '4EC9B0' },
+    { token: 'function', foreground: 'DCDCAA' },
+    { token: 'variable', foreground: '9CDCFE' },
+    { token: 'constant', foreground: '4FC1FF' },
+    { token: 'operator', foreground: 'D4D4D4' },
+    { token: 'delimiter', foreground: 'D4D4D4' },
+    { token: 'tag', foreground: '569CD6' },
+    { token: 'attribute', foreground: '9CDCFE' },
+  ],
+  colors: {
+    'editor.background': '#1E1E1E',
+    'editor.foreground': '#D4D4D4',
+    'editor.lineHighlightBackground': '#2A2D2E',
+    'editorLineNumber.foreground': '#858585',
+    'editorLineNumber.activeForeground': '#C6C6C6',
+    'editor.selectionBackground': '#264F78',
+    'editor.inactiveSelectionBackground': '#3A3D41',
+    'editor.wordHighlightBackground': '#575757B8',
+    'editor.findMatchBackground': '#515C6A',
+    'editor.findMatchHighlightBackground': '#314365',
+    'editor.findRangeHighlightBackground': '#2A2D2E',
+    'editor.hoverHighlightBackground': '#2A2D2E',
+    'editor.lineHighlightBorder': '#282828',
+    'editor.rangeHighlightBackground': '#2A2D2E',
+    'editorCursor.foreground': '#AEAFAD',
+    'editorWhitespace.foreground': '#404040',
+    'editorIndentGuide.background': '#404040',
+    'editorIndentGuide.activeBackground': '#707070',
+    'editor.selectionHighlightBackground': '#264F78',
+    'editor.wordHighlightStrongBackground': '#004972',
+    'editorBracketMatch.background': '#4B4B4B',
+    'editorBracketMatch.border': '#888888',
+    'editorGutter.background': '#1E1E1E',
+    'editorError.foreground': '#F48771',
+    'editorWarning.foreground': '#CCA700',
+    'editorInfo.foreground': '#75BEFF',
+    'editorHint.foreground': '#EEEEEE'
+  }
+};
+
+// Light theme configuration
+const lightTheme = {
+  base: 'vs' as const,
+  inherit: true,
+  rules: [
+    { token: 'comment', foreground: '008000' },
+    { token: 'keyword', foreground: '0000FF' },
+    { token: 'string', foreground: 'A31515' },
+    { token: 'number', foreground: '098658' },
+    { token: 'regexp', foreground: '811F3F' },
+    { token: 'type', foreground: '267F99' },
+    { token: 'class', foreground: '267F99' },
+    { token: 'function', foreground: '795E26' },
+    { token: 'variable', foreground: '001080' },
+    { token: 'constant', foreground: '0070C1' },
+    { token: 'operator', foreground: '000000' },
+    { token: 'delimiter', foreground: '000000' },
+    { token: 'tag', foreground: '0000FF' },
+    { token: 'attribute', foreground: '001080' },
+  ],
+  colors: {
+    'editor.background': '#FFFFFF',
+    'editor.foreground': '#000000',
+    'editor.lineHighlightBackground': '#F5F5F5',
+    'editorLineNumber.foreground': '#237893',
+    'editorLineNumber.activeForeground': '#0B216A',
+    'editor.selectionBackground': '#ADD6FF',
+    'editor.inactiveSelectionBackground': '#E5EBF1',
+    'editor.wordHighlightBackground': '#575757B8',
+    'editor.findMatchBackground': '#A97AC1',
+    'editor.findMatchHighlightBackground': '#EA5C0055',
+    'editor.findRangeHighlightBackground': '#F5F5F5',
+    'editor.hoverHighlightBackground': '#F5F5F5',
+    'editor.lineHighlightBorder': '#EEEEEE',
+    'editor.rangeHighlightBackground': '#F5F5F5',
+    'editorCursor.foreground': '#000000',
+    'editorWhitespace.foreground': '#A6A6A6',
+    'editorIndentGuide.background': '#D3D3D3',
+    'editorIndentGuide.activeBackground': '#939393',
+    'editor.selectionHighlightBackground': '#ADD6FF',
+    'editor.wordHighlightStrongBackground': '#004972',
+    'editorBracketMatch.background': '#E6F3FF',
+    'editorBracketMatch.border': '#7F7F7F',
+    'editorGutter.background': '#FFFFFF',
+    'editorError.foreground': '#E51400',
+    'editorWarning.foreground': '#CCA700',
+    'editorInfo.foreground': '#75BEFF',
+    'editorHint.foreground': '#6C6C6C'
+  }
+};
 
 function buildFileTree(files: any[]): FileNode[] {
   const tree: { [key: string]: FileNode } = {};
@@ -121,6 +233,7 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
   onFileClick: (file: FileNode) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(level < 2);
+  const { theme } = useTheme();
 
   const handleClick = () => {
     if (node.type === 'folder') {
@@ -135,49 +248,63 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
     switch (ext) {
       case 'js':
       case 'jsx':
-        return 'bg-yellow-500';
+        return theme === 'dark' ? 'bg-yellow-400' : 'bg-yellow-500';
       case 'ts':
       case 'tsx':
-        return 'bg-blue-500';
+        return theme === 'dark' ? 'bg-blue-400' : 'bg-blue-500';
       case 'json':
-        return 'bg-green-500';
+        return theme === 'dark' ? 'bg-green-400' : 'bg-green-500';
       case 'css':
       case 'scss':
-        return 'bg-purple-500';
+        return theme === 'dark' ? 'bg-purple-400' : 'bg-purple-500';
       case 'html':
-        return 'bg-orange-500';
+        return theme === 'dark' ? 'bg-orange-400' : 'bg-orange-500';
       case 'md':
-        return 'bg-gray-500';
+        return theme === 'dark' ? 'bg-gray-400' : 'bg-gray-500';
       default:
-        return 'bg-gray-400';
+        return theme === 'dark' ? 'bg-gray-300' : 'bg-gray-400';
     }
   };
 
   return (
     <div>
       <div 
-        className={`flex items-center py-2 px-3 hover:bg-accent hover:text-accent-foreground cursor-pointer rounded-sm group`}
+        className={`flex items-center py-1.5 px-3 cursor-pointer rounded-sm group transition-colors duration-200 ${
+          theme === 'dark'
+            ? 'hover:bg-[#2A2D2E] text-gray-200'
+            : 'hover:bg-gray-100 text-gray-700'
+        }`}
         style={{ paddingLeft: `${level * 20 + 12}px` }}
         onClick={handleClick}
       >
         {node.type === 'folder' ? (
           <div className="flex items-center">
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4 mr-2 text-muted-foreground" />
+              <ChevronDown className={`w-4 h-4 mr-2 ${
+                theme === 'dark' ? 'text-white' : 'text-black'
+              }`} />
             ) : (
-              <ChevronRight className="w-4 h-4 mr-2 text-muted-foreground" />
+              <ChevronRight className={`w-4 h-4 mr-2 ${
+                theme === 'dark' ? 'text-white' : 'text-black'
+              }`} />
             )}
-            <Folder className="w-4 h-4 mr-2 text-blue-600 dark:text-blue-400" />
+            <Folder className={`w-4 h-4 mr-2 ${
+              theme === 'dark' ? 'text-white' : 'text-black'
+            }`} />
           </div>
         ) : (
           <div className="flex items-center">
             <div className="w-6 h-4 mr-2 flex items-center">
-              <File className="w-4 h-4 text-muted-foreground" />
+              <File className={`w-4 h-4 ${
+                theme === 'dark' ? 'text-white' : 'text-black'
+              }`} />
             </div>
             <div className={`w-2 h-2 rounded-full mr-2 ${getLanguageColor(node.name)} opacity-75`} />
           </div>
         )}
-        <span className="text-sm font-medium truncate">
+        <span className={`text-sm font-medium truncate ${
+          theme === 'dark' ? 'text-gray-200' : 'text-gray-700'
+        }`}>
           {node.name}
         </span>
       </div>
@@ -210,6 +337,16 @@ export default function ProjectView({ project }: { project: Project }) {
   const [editorTabs, setEditorTabs] = useState<EditorTab[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const { theme, setTheme } = useTheme();
+  const editorRef = useRef<any>(null);
+  const monacoRef = useRef<any>(null);
+
+  // Watch for theme changes and update editor theme
+  useEffect(() => {
+    if (editorRef.current && monacoRef.current) {
+      monacoRef.current.editor.setTheme(theme === 'dark' ? 'custom-dark' : 'custom-light');
+    }
+  }, [theme]);
 
   // Check for mobile viewport
   useEffect(() => {
@@ -305,16 +442,36 @@ export default function ProjectView({ project }: { project: Project }) {
   const fileTree = buildFileTree(project.files);
 
   return (
-    <div className="min-h-screen bg-[#1e1e1e] text-[#d4d4d4]">
+    <div className={`min-h-screen transition-colors duration-200 ${
+      theme === 'dark' ? 'bg-[#1e1e1e] text-[#d4d4d4]' : 'bg-white text-gray-900'
+    }`}>
       {/* Activity Bar */}
-      <div className="fixed left-0 top-0 h-full w-12 bg-[#333333] flex flex-col items-center py-2 z-50">
+      <div className={`fixed left-0 top-0 h-full w-12 transition-colors duration-200 ${
+        theme === 'dark' ? 'bg-[#333333]' : 'bg-gray-100'
+      } flex flex-col items-center py-2 z-50`}>
         <Button 
           variant="ghost" 
           size="icon" 
-          className="h-10 w-10 text-[#d4d4d4] hover:bg-[#404040] hover:text-white md:hidden"
+          className={`h-10 w-10 transition-colors duration-200 ${
+            theme === 'dark' 
+              ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
+              : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+          } md:hidden`}
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}
         >
           <Menu className="h-5 w-5" />
+        </Button>
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={`h-10 w-10 transition-colors duration-200 ${
+            theme === 'dark' 
+              ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
+              : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+          }`}
+          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+        >
+          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
         </Button>
         <Button variant="ghost" size="icon" className="h-10 w-10 text-[#d4d4d4] hover:bg-[#404040] hover:text-white" onClick={() => setActiveTab('explorer')}>
           <FileText className="h-5 w-5" />
@@ -343,19 +500,27 @@ export default function ProjectView({ project }: { project: Project }) {
       {/* Main Content */}
       <div className="pl-12">
         {/* Header */}
-        <div className="sticky top-0 z-40 w-full border-b border-[#404040] bg-[#1e1e1e]">
+        <div className={`sticky top-0 z-40 w-full border-b transition-colors duration-200 ${
+          theme === 'dark' ? 'border-[#404040] bg-[#1e1e1e]' : 'border-gray-200 bg-white'
+        }`}>
           <div className="flex h-10 items-center px-4">
             <div className="flex items-center space-x-3 overflow-hidden">
               <div className="flex items-center space-x-2 min-w-0">
-                <User className="h-4 w-4 text-[#d4d4d4] flex-shrink-0" />
-                <span className="text-sm text-[#d4d4d4] truncate">{project.user?.name || 'owner'}</span>
-                <span className="text-[#d4d4d4] flex-shrink-0">/</span>
-                <h1 className="text-sm font-medium text-[#d4d4d4] truncate">
+                <User className={`h-4 w-4 ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} flex-shrink-0`} />
+                <span className={`text-sm ${theme === 'dark' ? 'text-gray-300' : 'text-gray-600'} truncate`}>
+                  {project.user?.name || 'owner'}
+                </span>
+                <span className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>/</span>
+                <h1 className={`text-sm font-medium ${theme === 'dark' ? 'text-gray-200' : 'text-gray-900'} truncate`}>
                   {project.name}
                 </h1>
               </div>
               {!project.isFree && (
-                <Badge variant="outline" className="bg-[#404040] text-[#d4d4d4] border-[#404040] flex-shrink-0">
+                <Badge variant="outline" className={`${
+                  theme === 'dark' 
+                    ? 'bg-[#404040] text-gray-200 border-[#404040]' 
+                    : 'bg-gray-100 text-gray-700 border-gray-200'
+                } flex-shrink-0`}>
                   Private
                 </Badge>
               )}
@@ -367,14 +532,26 @@ export default function ProjectView({ project }: { project: Project }) {
         <div className="flex h-[calc(100vh-2.5rem)]">
           {/* Sidebar */}
           <div 
-            className={`fixed md:static inset-y-0 left-12 z-40 w-64 bg-[#252526] border-r border-[#404040] transition-transform duration-200 ease-in-out ${
+            className={`fixed md:static inset-y-0 left-12 z-40 w-64 transition-all duration-200 ${
+              theme === 'dark' 
+                ? 'bg-[#252526] border-[#404040]' 
+                : 'bg-[#f3f3f3] border-gray-200'
+            } border-r ${
               isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
             } md:translate-x-0`}
           >
-            <div className="h-10 flex items-center px-4 border-b border-[#404040]">
-              <span className="text-sm font-medium text-[#d4d4d4]">EXPLORER</span>
+            <div className={`h-10 flex items-center px-4 border-b transition-colors duration-200 ${
+              theme === 'dark' 
+                ? 'border-[#404040] bg-[#252526]' 
+                : 'border-gray-200 bg-[#f3f3f3]'
+            }`}>
+              <span className={`text-sm font-medium ${
+                theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+              }`}>EXPLORER</span>
             </div>
-            <div className="overflow-y-auto h-[calc(100%-2.5rem)]">
+            <div className={`overflow-y-auto h-[calc(100%-2.5rem)] ${
+              theme === 'dark' ? 'bg-[#252526]' : 'bg-[#f3f3f3]'
+            }`}>
               {fileTree.map((node, index) => (
                 <FileTreeNode 
                   key={index} 
@@ -386,26 +563,52 @@ export default function ProjectView({ project }: { project: Project }) {
           </div>
 
           {/* Editor Area */}
-          <div className="flex-1 bg-[#1e1e1e] min-w-0">
+          <div className={`flex-1 transition-colors duration-200 ${
+            theme === 'dark' ? 'bg-[#1e1e1e]' : 'bg-white'
+          } min-w-0`}>
             {editorTabs.length > 0 ? (
               <div className="h-full flex flex-col">
                 {/* Editor Tabs */}
-                <div className="h-10 flex items-center border-b border-[#404040] bg-[#252526] overflow-x-auto">
+                <div className={`h-10 flex items-center border-b transition-colors duration-200 ${
+                  theme === 'dark' 
+                    ? 'border-[#404040] bg-[#252526]' 
+                    : 'border-gray-200 bg-gray-50'
+                } overflow-x-auto`}>
                   {editorTabs.map((tab) => (
                     <div
                       key={tab.file.appwriteId}
-                      className={`group flex items-center h-full px-4 border-r border-[#404040] cursor-pointer flex-shrink-0 ${
-                        tab.isActive ? 'bg-[#1e1e1e]' : 'bg-[#2d2d2d] hover:bg-[#2d2d2d]'
+                      className={`group flex items-center h-full px-4 border-r transition-colors duration-200 ${
+                        theme === 'dark' ? 'border-[#404040]' : 'border-gray-200'
+                      } cursor-pointer flex-shrink-0 ${
+                        tab.isActive 
+                          ? theme === 'dark' 
+                            ? 'bg-[#1e1e1e]' 
+                            : 'bg-white'
+                          : theme === 'dark'
+                            ? 'bg-[#2d2d2d] hover:bg-[#2d2d2d]'
+                            : 'bg-gray-50 hover:bg-gray-100'
                       }`}
                       onClick={() => handleTabClick(tab)}
                     >
-                      <File className="w-4 h-4 mr-2 text-[#d4d4d4] flex-shrink-0" />
-                      <span className="text-sm text-[#d4d4d4] whitespace-nowrap truncate max-w-[150px]">{tab.file.name}</span>
+                      <File className={`w-4 h-4 mr-2 ${
+                        theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                      } flex-shrink-0`} />
+                      <span className={`text-sm ${
+                        theme === 'dark' ? 'text-gray-200' : 'text-gray-900'
+                      } whitespace-nowrap truncate max-w-[150px]`}>
+                        {tab.file.name}
+                      </span>
                       <button
-                        className="ml-2 p-1 rounded hover:bg-[#404040] opacity-0 group-hover:opacity-100 transition-opacity flex-shrink-0"
+                        className={`ml-2 p-1 rounded transition-colors duration-200 ${
+                          theme === 'dark' 
+                            ? 'hover:bg-[#404040]' 
+                            : 'hover:bg-gray-200'
+                        } opacity-0 group-hover:opacity-100 flex-shrink-0`}
                         onClick={(e) => handleTabClose(e, tab)}
                       >
-                        <X className="w-3 h-3 text-[#d4d4d4]" />
+                        <X className={`w-3 h-3 ${
+                          theme === 'dark' ? 'text-gray-300' : 'text-gray-600'
+                        }`} />
                       </button>
                     </div>
                   ))}
@@ -418,6 +621,42 @@ export default function ProjectView({ project }: { project: Project }) {
                       height="100%"
                       defaultLanguage="javascript"
                       value={fileContent}
+                      beforeMount={(monaco) => {
+                        monacoRef.current = monaco;
+                        monaco.editor.defineTheme('custom-dark', darkTheme);
+                        monaco.editor.defineTheme('custom-light', lightTheme);
+                      }}
+                      onMount={(editor, monaco) => {
+                        editorRef.current = editor;
+                        monacoRef.current = monaco;
+                        monaco.editor.setTheme(theme === 'dark' ? 'custom-dark' : 'custom-light');
+                        editor.updateOptions({
+                          fontFamily: 'JetBrains Mono, Menlo, Monaco, Consolas, monospace',
+                          fontLigatures: true,
+                          fontSize: isMobile ? 12 : 14,
+                          lineHeight: 20,
+                          padding: { top: 8, bottom: 8 },
+                          scrollbar: {
+                            vertical: 'visible',
+                            horizontal: 'visible',
+                            useShadows: false,
+                            verticalScrollbarSize: 10,
+                            horizontalScrollbarSize: 10,
+                          },
+                          minimap: {
+                            enabled: !isMobile,
+                            maxColumn: 80,
+                            renderCharacters: false,
+                            showSlider: 'mouseover',
+                          },
+                          renderWhitespace: 'selection',
+                          renderControlCharacters: true,
+                          renderLineHighlight: 'all',
+                          renderValidationDecorations: 'on',
+                          lineNumbers: 'on',
+                          renderFinalNewline: 'on',
+                        });
+                      }}
                       options={{
                         readOnly: true,
                         minimap: { enabled: !isMobile },
@@ -431,13 +670,16 @@ export default function ProjectView({ project }: { project: Project }) {
                         smoothScrolling: true,
                         mouseWheelZoom: true,
                       }}
-                      theme="vs-dark"
                     />
                   ) : (
                     <div className="flex items-center justify-center h-full">
                       <div className="text-center space-y-4">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#007acc] mx-auto"></div>
-                        <p className="text-[#d4d4d4]">Loading file content...</p>
+                        <div className={`animate-spin rounded-full h-8 w-8 border-b-2 ${
+                          theme === 'dark' ? 'border-[#007acc]' : 'border-blue-500'
+                        } mx-auto`}></div>
+                        <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>
+                          Loading file content...
+                        </p>
                       </div>
                     </div>
                   )}
@@ -446,8 +688,12 @@ export default function ProjectView({ project }: { project: Project }) {
             ) : (
               <div className="flex items-center justify-center h-full">
                 <div className="text-center space-y-4">
-                  <File className="w-12 h-12 text-[#d4d4d4] mx-auto" />
-                  <p className="text-[#d4d4d4]">Select a file to view its contents</p>
+                  <File className={`w-12 h-12 ${
+                    theme === 'dark' ? 'text-gray-400' : 'text-gray-300'
+                  } mx-auto`} />
+                  <p className={theme === 'dark' ? 'text-gray-300' : 'text-gray-600'}>
+                    Select a file to view its contents
+                  </p>
                 </div>
               </div>
             )}
@@ -458,7 +704,7 @@ export default function ProjectView({ project }: { project: Project }) {
       {/* Mobile Overlay */}
       {isSidebarOpen && isMobile && (
         <div 
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          className="fixed inset-0 bg-black/50 z-30 md:hidden transition-opacity duration-200"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
