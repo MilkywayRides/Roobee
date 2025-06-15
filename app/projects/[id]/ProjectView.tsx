@@ -40,8 +40,16 @@ import {
   Settings2,
   Menu,
   Sun,
-  Moon
+  Moon,
+  Python,
+  Image as ImageIcon,
+  Markdown,
+  FileJs,
+  FileTs,
+  FileJson,
+  FileCode2
 } from 'lucide-react';
+import { AvatarButton } from "@/components/ui/avatar-button";
 
 interface FileNode {
   name: string;
@@ -182,6 +190,28 @@ const lightTheme = {
   }
 };
 
+// Map file extensions to icons and Monaco languages
+const fileTypeMap: Record<string, { icon: any; language: string }> = {
+  'py': { icon: FileCode2, language: 'python' },
+  'js': { icon: FileCode2, language: 'javascript' },
+  'jsx': { icon: FileCode2, language: 'javascript' },
+  'ts': { icon: FileCode2, language: 'typescript' },
+  'tsx': { icon: FileCode2, language: 'typescript' },
+  'json': { icon: FileJson, language: 'json' },
+  'md': { icon: FileText, language: 'markdown' },
+  'png': { icon: ImageIcon, language: '' },
+  'jpg': { icon: ImageIcon, language: '' },
+  'jpeg': { icon: ImageIcon, language: '' },
+  'gif': { icon: ImageIcon, language: '' },
+  'svg': { icon: ImageIcon, language: '' },
+  'txt': { icon: FileText, language: 'plaintext' },
+};
+
+function getFileTypeInfo(name: string) {
+  const ext = name.split('.').pop()?.toLowerCase() || '';
+  return fileTypeMap[ext] || { icon: FileCode2, language: ext || 'plaintext' };
+}
+
 function buildFileTree(files: any[]): FileNode[] {
   const tree: { [key: string]: FileNode } = {};
   const root: FileNode[] = [];
@@ -261,10 +291,14 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
         return theme === 'dark' ? 'bg-orange-400' : 'bg-orange-500';
       case 'md':
         return theme === 'dark' ? 'bg-gray-400' : 'bg-gray-500';
+      case 'py':
+        return theme === 'dark' ? 'bg-green-300' : 'bg-green-600';
       default:
         return theme === 'dark' ? 'bg-gray-300' : 'bg-gray-400';
     }
   };
+
+  const { icon: FileIconComponent } = getFileTypeInfo(node.name);
 
   return (
     <div>
@@ -295,7 +329,7 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
         ) : (
           <div className="flex items-center">
             <div className="w-6 h-4 mr-2 flex items-center">
-              <File className={`w-4 h-4 ${
+              <FileIconComponent className={`w-4 h-4 ${
                 theme === 'dark' ? 'text-white' : 'text-black'
               }`} />
             </div>
@@ -316,9 +350,9 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
               if (a.type === b.type) return a.name.localeCompare(b.name);
               return a.type === 'folder' ? -1 : 1;
             })
-            .map((child, index) => (
+            .map((child) => (
               <FileTreeNode 
-                key={index} 
+                key={`${child.path}-${child.type}-${child.name}`}
                 node={child} 
                 level={level + 1} 
                 onFileClick={onFileClick}
@@ -337,16 +371,71 @@ export default function ProjectView({ project }: { project: Project }) {
   const [editorTabs, setEditorTabs] = useState<EditorTab[]>([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const { theme, setTheme } = useTheme();
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
 
-  // Watch for theme changes and update editor theme
+  // Handle initial mount
   useEffect(() => {
-    if (editorRef.current && monacoRef.current) {
-      monacoRef.current.editor.setTheme(theme === 'dark' ? 'custom-dark' : 'custom-light');
-    }
-  }, [theme]);
+    setMounted(true);
+  }, []);
+
+  // Handle theme changes
+  useEffect(() => {
+    if (!mounted) return;
+
+    const updateTheme = () => {
+      if (monacoRef.current) {
+        const currentTheme = theme === 'dark' ? 'custom-dark' : 'custom-light';
+        monacoRef.current.editor.setTheme(currentTheme);
+      }
+    };
+
+    updateTheme();
+  }, [theme, mounted]);
+
+  // Initialize Monaco editor
+  const handleEditorDidMount = (editor: any, monaco: any) => {
+    editorRef.current = editor;
+    monacoRef.current = monaco;
+
+    // Define themes
+    monaco.editor.defineTheme('custom-dark', darkTheme);
+    monaco.editor.defineTheme('custom-light', lightTheme);
+
+    // Set initial theme
+    const currentTheme = theme === 'dark' ? 'custom-dark' : 'custom-light';
+    monaco.editor.setTheme(currentTheme);
+
+    // Set editor options
+    editor.updateOptions({
+      fontFamily: 'JetBrains Mono, Menlo, Monaco, Consolas, monospace',
+      fontLigatures: true,
+      fontSize: isMobile ? 12 : 14,
+      lineHeight: 20,
+      padding: { top: 8, bottom: 8 },
+      scrollbar: {
+        vertical: 'visible',
+        horizontal: 'visible',
+        useShadows: false,
+        verticalScrollbarSize: 10,
+        horizontalScrollbarSize: 10,
+      },
+      minimap: {
+        enabled: !isMobile,
+        maxColumn: 80,
+        renderCharacters: false,
+        showSlider: 'mouseover',
+      },
+      renderWhitespace: 'selection',
+      renderControlCharacters: true,
+      renderLineHighlight: 'all',
+      renderValidationDecorations: 'on',
+      lineNumbers: 'on',
+      renderFinalNewline: 'on',
+    });
+  };
 
   // Check for mobile viewport
   useEffect(() => {
@@ -443,11 +532,11 @@ export default function ProjectView({ project }: { project: Project }) {
 
   return (
     <div className={`min-h-screen transition-colors duration-200 ${
-      theme === 'dark' ? 'bg-[#1e1e1e] text-[#d4d4d4]' : 'bg-white text-gray-900'
+      !mounted ? 'bg-white text-gray-900' : theme === 'dark' ? 'bg-[#1e1e1e] text-[#d4d4d4]' : 'bg-white text-gray-900'
     }`}>
       {/* Activity Bar */}
       <div className={`fixed left-0 top-0 h-full w-12 transition-colors duration-200 ${
-        theme === 'dark' ? 'bg-[#333333]' : 'bg-gray-100'
+        !mounted ? 'bg-gray-100' : theme === 'dark' ? 'bg-[#333333]' : 'bg-gray-100'
       } flex flex-col items-center py-2 z-50`}>
         <Button 
           variant="ghost" 
@@ -461,40 +550,50 @@ export default function ProjectView({ project }: { project: Project }) {
         >
           <Menu className="h-5 w-5" />
         </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className={`h-10 w-10 transition-colors duration-200 ${
-            theme === 'dark' 
-              ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
-              : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
-          }`}
-          onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-        >
-          {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
-        </Button>
-        <Button variant="ghost" size="icon" className="h-10 w-10 text-[#d4d4d4] hover:bg-[#404040] hover:text-white" onClick={() => setActiveTab('explorer')}>
+        <Button variant="ghost" size="icon" className={`h-10 w-10 transition-colors duration-200 ${
+          theme === 'dark' 
+            ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
+            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+        }`} onClick={() => setActiveTab('explorer')}>
           <FileText className="h-5 w-5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-10 w-10 text-[#d4d4d4] hover:bg-[#404040] hover:text-white" onClick={() => setActiveTab('search')}>
+        <Button variant="ghost" size="icon" className={`h-10 w-10 transition-colors duration-200 ${
+          theme === 'dark' 
+            ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
+            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+        }`} onClick={() => setActiveTab('search')}>
           <Search className="h-5 w-5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-10 w-10 text-[#d4d4d4] hover:bg-[#404040] hover:text-white" onClick={() => setActiveTab('source')}>
+        <Button variant="ghost" size="icon" className={`h-10 w-10 transition-colors duration-200 ${
+          theme === 'dark' 
+            ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
+            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+        }`} onClick={() => setActiveTab('source')}>
           <Code2 className="h-5 w-5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-10 w-10 text-[#d4d4d4] hover:bg-[#404040] hover:text-white" onClick={() => setActiveTab('git')}>
+        <Button variant="ghost" size="icon" className={`h-10 w-10 transition-colors duration-200 ${
+          theme === 'dark' 
+            ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
+            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+        }`} onClick={() => setActiveTab('git')}>
           <GitPullRequest className="h-5 w-5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-10 w-10 text-[#d4d4d4] hover:bg-[#404040] hover:text-white" onClick={() => setActiveTab('debug')}>
+        <Button variant="ghost" size="icon" className={`h-10 w-10 transition-colors duration-200 ${
+          theme === 'dark' 
+            ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
+            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+        }`} onClick={() => setActiveTab('debug')}>
           <Bug className="h-5 w-5" />
         </Button>
-        <Button variant="ghost" size="icon" className="h-10 w-10 text-[#d4d4d4] hover:bg-[#404040] hover:text-white" onClick={() => setActiveTab('extensions')}>
+        <Button variant="ghost" size="icon" className={`h-10 w-10 transition-colors duration-200 ${
+          theme === 'dark' 
+            ? 'text-gray-300 hover:bg-[#404040] hover:text-white' 
+            : 'text-gray-600 hover:bg-gray-200 hover:text-gray-900'
+        }`} onClick={() => setActiveTab('extensions')}>
           <LayoutGrid className="h-5 w-5" />
         </Button>
         <div className="flex-1" />
-        <Button variant="ghost" size="icon" className="h-10 w-10 text-[#d4d4d4] hover:bg-[#404040] hover:text-white" onClick={() => setActiveTab('settings')}>
-          <Settings2 className="h-5 w-5" />
-        </Button>
+        <AvatarButton className="mb-2" />
       </div>
 
       {/* Main Content */}
@@ -619,44 +718,9 @@ export default function ProjectView({ project }: { project: Project }) {
                   {fileContent ? (
                     <Editor
                       height="100%"
-                      defaultLanguage="javascript"
+                      defaultLanguage={getFileTypeInfo(selectedFile?.name || '').language}
                       value={fileContent}
-                      beforeMount={(monaco) => {
-                        monacoRef.current = monaco;
-                        monaco.editor.defineTheme('custom-dark', darkTheme);
-                        monaco.editor.defineTheme('custom-light', lightTheme);
-                      }}
-                      onMount={(editor, monaco) => {
-                        editorRef.current = editor;
-                        monacoRef.current = monaco;
-                        monaco.editor.setTheme(theme === 'dark' ? 'custom-dark' : 'custom-light');
-                        editor.updateOptions({
-                          fontFamily: 'JetBrains Mono, Menlo, Monaco, Consolas, monospace',
-                          fontLigatures: true,
-                          fontSize: isMobile ? 12 : 14,
-                          lineHeight: 20,
-                          padding: { top: 8, bottom: 8 },
-                          scrollbar: {
-                            vertical: 'visible',
-                            horizontal: 'visible',
-                            useShadows: false,
-                            verticalScrollbarSize: 10,
-                            horizontalScrollbarSize: 10,
-                          },
-                          minimap: {
-                            enabled: !isMobile,
-                            maxColumn: 80,
-                            renderCharacters: false,
-                            showSlider: 'mouseover',
-                          },
-                          renderWhitespace: 'selection',
-                          renderControlCharacters: true,
-                          renderLineHighlight: 'all',
-                          renderValidationDecorations: 'on',
-                          lineNumbers: 'on',
-                          renderFinalNewline: 'on',
-                        });
-                      }}
+                      onMount={handleEditorDidMount}
                       options={{
                         readOnly: true,
                         minimap: { enabled: !isMobile },
