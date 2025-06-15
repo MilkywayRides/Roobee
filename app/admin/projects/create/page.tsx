@@ -17,6 +17,7 @@ interface UploadedFile {
     type: string;
     appwriteId: string;
     path: string;
+    webkitRelativePath?: string;
 }
 
 export default function CreateProjectPage() {
@@ -29,6 +30,7 @@ export default function CreateProjectPage() {
     coinCost: 0
   });
   const [files, setFiles] = useState<File[]>([]);
+  const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [uploadProgress, setUploadProgress] = useState<{ [key: string]: number }>({});
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,9 +60,24 @@ export default function CreateProjectPage() {
     }
   };
 
-  const handleFolderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setFiles(prev => [...prev, ...Array.from(e.target.files)]);
+  const handleFolderChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      const folderFiles = Array.from(e.target.files);
+      const allFiles: File[] = [];
+      
+      // Process each file and maintain folder structure
+      for (const file of folderFiles) {
+        // Get the relative path from the file's webkitRelativePath
+        const relativePath = file.webkitRelativePath || file.name;
+        // Create a new File object with the same content but with the correct path
+        const fileWithPath = new File([file], relativePath, {
+          type: file.type,
+          lastModified: file.lastModified
+        });
+        allFiles.push(fileWithPath);
+      }
+      
+      setFiles(prev => [...prev, ...allFiles]);
     }
   };
 
@@ -112,40 +129,61 @@ export default function CreateProjectPage() {
     }
   };
 
-  const handleFiles = async (selectedFiles: File[], projectId: string) => {
+  const handleFiles = async (selectedFiles: FileList | File[], projectId: string) => {
+    const filesArray = Array.from(selectedFiles);
     setUploading(true);
     setError(null);
 
     try {
-      for (const file of selectedFiles) {
+      for (const file of filesArray) {
         try {
-          const response = await handleFileUpload(file);
-          // Save file metadata to database
-          const metadataResponse = await fetch(`/api/projects/${projectId}/files`, {
+          // Get the relative path from the file's webkitRelativePath or name
+          const relativePath = file.webkitRelativePath || file.name;
+          
+          // Upload the file to Appwrite
+          const uploadedFile = await uploadFile(file);
+          
+          // Save file metadata to database with the correct path
+          const response = await fetch(`/api/projects/${projectId}/files`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
             },
             body: JSON.stringify({
-              fileName: file.name,
-              fileId: response.$id,
+              fileName: relativePath,
+              fileId: uploadedFile.$id,
               fileSize: file.size,
               mimeType: file.type,
-              isPublic: true
-            }),
+              isPublic: false
+            })
           });
-          if (!metadataResponse.ok) {
-            const errorData = await metadataResponse.json();
+
+          if (!response.ok) {
+            const errorData = await response.json();
             throw new Error(errorData.error || 'Failed to save file metadata');
           }
-        } catch (error) {
-          console.error(`Failed to upload ${file.name}:`, error);
-          // Continue with other files even if one fails
+
+          // Update progress
+          setUploadProgress(prev => ({
+            ...prev,
+            [relativePath]: 100
+          }));
+
+          // Add to uploaded files
+          setUploadedFiles(prev => [...prev, {
+            name: relativePath,
+            size: file.size,
+            type: file.type,
+            appwriteId: uploadedFile.$id,
+            path: relativePath,
+            webkitRelativePath: file.webkitRelativePath
+          }]);
+
+        } catch (error: any) {
+          console.error('Error uploading file:', error);
+          setError(prev => prev ? `${prev}\nFailed to upload ${file.name}: ${error.message}` : `Failed to upload ${file.name}: ${error.message}`);
         }
       }
-    } catch (error) {
-      console.error('Error processing files:', error);
-      setError('Failed to upload some files. Please try again.');
     } finally {
       setUploading(false);
     }
