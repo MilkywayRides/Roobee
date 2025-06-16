@@ -3,6 +3,7 @@
 import { Sidebar } from "@/components/dashboard/sidebar";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { useState } from "react";
+import { usePathname } from "next/navigation";
 
 export default function AdminLayout({
   children,
@@ -11,6 +12,9 @@ export default function AdminLayout({
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const pathname = usePathname();
+  const segment = pathname.split('/').pop() || 'Dashboard';
+
   return (
     <div className="flex h-screen bg-background dark:bg-[#171717]">
       <Sidebar
@@ -26,34 +30,38 @@ export default function AdminLayout({
         />
       )}
       <div className="flex-1 rounded-2xl overflow-auto">
-        <div className="bg-card rounded-2xl shadow-lg m-2 h-[calc(100vh-2.5rem)]">
-          <div className="flex items-center justify-between rounded-t-2xl px-6 py-2 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
-            <button
-              className="mr-4 p-2 rounded hover:bg-muted transition-colors hidden md:block"
-              onClick={() => setCollapsed((c) => !c)}
-              aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            >
-              {collapsed ? (
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevrons-right"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
-              ) : (
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevrons-left"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
-              )}
-            </button>
-            <button
-              className="mr-4 p-2 rounded hover:bg-muted transition-colors md:hidden"
-              onClick={() => setMobileOpen((o) => !o)}
-              aria-label={mobileOpen ? 'Close sidebar' : 'Open sidebar'}
-            >
-              {mobileOpen ? (
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevrons-left"><polyline points="11 17 6 12 11 7"/><polyline points="18 17 13 12 18 7"/></svg>
-              ) : (
-                <svg width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-chevrons-right"><polyline points="13 17 18 12 13 7"/><polyline points="6 17 11 12 6 7"/></svg>
-              )}
-            </button>
-            <div className="flex-1">{/* Breadcrumb will go here */}</div>
+        <div className="bg-card rounded-2xl shadow-lg m-1 min-h-screen">
+          <div className="flex items-center justify-between rounded-t-2xl px-6 py-2 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 sticky top-0 z-10">
+            <div className="flex items-center">
+              <button
+                className="mr-4 p-2 rounded hover:bg-muted transition-colors hidden md:block"
+                onClick={() => setCollapsed((c) => !c)}
+                aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {collapsed ? (
+                  <svg width="13" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-right"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="15" x2="15" y1="3" y2="21"/></svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-right"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="15" x2="15" y1="3" y2="21"/></svg>
+                )}
+              </button>
+              <button
+                className="mr-4 p-2 rounded hover:bg-muted transition-colors md:hidden"
+                onClick={() => setMobileOpen((o) => !o)}
+                aria-label={mobileOpen ? 'Close sidebar' : 'Open sidebar'}
+              >
+                {mobileOpen ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-right"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="15" x2="15" y1="3" y2="21"/></svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-panel-right"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><line x1="15" x2="15" y1="3" y2="21"/></svg>
+                )}
+              </button>
+              <div className="flex-1 text-lg font-semibold">
+                {segment}
+              </div>
+            </div>
             <ThemeToggle />
           </div>
-          <div className="p-6 h-[calc(100%-4rem)] overflow-auto">
+          <div className="p-6 overflow-auto">
             {children}
           </div>
         </div>
