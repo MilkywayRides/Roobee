@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useTheme } from "next-themes";
+import Head from 'next/head';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,16 +12,21 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Separator } from "@/components/ui/separator";
 import Editor, { loader } from '@monaco-editor/react';
 import { toast } from 'react-hot-toast';
+import {
+  HoverCard,
+  HoverCardContent,
+  HoverCardTrigger,
+} from "@/components/ui/hover-card"
 import '@/app/styles/monaco.css';
-import { 
-  GitBranch, 
-  Star, 
-  GitFork, 
-  Eye, 
-  Download, 
-  Code, 
-  FileText, 
-  Folder, 
+import {
+  GitBranch,
+  Star,
+  GitFork,
+  Eye,
+  Download,
+  Code,
+  FileText,
+  Folder,
   ChevronRight,
   Clock,
   User,
@@ -93,7 +99,7 @@ interface FileTypeInfo {
 
 const getFileTypeInfo = (filename: string): FileTypeInfo => {
   const extension = filename.split('.').pop()?.toLowerCase();
-  
+
   switch (extension) {
     case 'js':
     case 'jsx':
@@ -170,7 +176,7 @@ function buildFileTree(files: any[]): FileNode[] {
     if (parts.length > 1) {
       parts.shift();
     }
-    
+
     let currentPath = '';
     let parentNode: FileNode | null = null;
 
@@ -204,9 +210,9 @@ function buildFileTree(files: any[]): FileNode[] {
   return root;
 }
 
-function FileTreeNode({ node, level = 0, onFileClick }: { 
-  node: FileNode; 
-  level?: number; 
+function FileTreeNode({ node, level = 0, onFileClick }: {
+  node: FileNode;
+  level?: number;
   onFileClick: (file: FileNode) => void;
 }) {
   const [isExpanded, setIsExpanded] = useState(level < 2);
@@ -229,44 +235,44 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
 
   return (
     <div>
-      <div 
-        className="flex items-center py-1.5 px-3 cursor-pointer rounded-sm group transition-colors duration-200 hover:bg-muted"
+      <div
+        className="flex items-center py-1.5 px-3 cursor-pointer rounded-sm group transition-all duration-200 hover:bg-muted/80 active:bg-muted"
         style={{ paddingLeft: `${level * 20 + 12}px` }}
         onClick={handleClick}
       >
         {node.type === 'folder' ? (
           <div className="flex items-center">
             {isExpanded ? (
-              <ChevronDown className="w-4 h-4 mr-2 text-muted-foreground" />
+              <ChevronDown className="w-4 h-4 mr-2 text-muted-foreground transition-transform duration-200" />
             ) : (
-              <ChevronRight className="w-4 h-4 mr-2 text-muted-foreground" />
+              <ChevronRight className="w-4 h-4 mr-2 text-muted-foreground transition-transform duration-200" />
             )}
-            <Folder className="w-4 h-4 mr-2 text-muted-foreground" />
+            <Folder className="w-4 h-4 mr-2 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
           </div>
         ) : (
           <div className="flex items-center">
             <div className="w-6 h-4 mr-2 flex items-center">
-              <FileIconComponent className="w-4 h-4 text-muted-foreground" />
+              <FileIconComponent className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors duration-200" />
             </div>
           </div>
         )}
-        <span className="text-sm font-medium text-foreground">
+        <span className="text-sm font-medium text-foreground/90 group-hover:text-foreground transition-colors duration-200">
           {node.name}
         </span>
       </div>
-      
+
       {node.type === 'folder' && isExpanded && node.children && (
-        <div>
+        <div className="transition-all duration-200">
           {node.children
             .sort((a, b) => {
               if (a.type === b.type) return a.name.localeCompare(b.name);
               return a.type === 'folder' ? -1 : 1;
             })
             .map((child) => (
-              <FileTreeNode 
+              <FileTreeNode
                 key={child.appwriteId || `${child.path}-${child.type}-${child.name}`}
-                node={child} 
-                level={level + 1} 
+                node={child}
+                level={level + 1}
                 onFileClick={onFileClick}
               />
             ))}
@@ -577,7 +583,7 @@ export default function ProjectView({ project }: { project: Project }) {
           // Calculate column widths
           const maxSize = Math.max(...nodes.map(n => n.size?.toString()?.length || 0));
           const maxName = Math.max(...nodes.map(n => n.name.length));
-          
+
           nodes.forEach(node => {
             const prefix = node.type === 'folder' ? 'd' : '-';
             const permissions = 'rw-r--r--';
@@ -598,10 +604,10 @@ export default function ProjectView({ project }: { project: Project }) {
             const isLastNode = index === nodes.length - 1;
             const currentPrefix = prefix + (isLast ? '    ' : '│   ');
             const nodePrefix = prefix + (isLast ? '└── ' : '├── ');
-            
+
             // Print current node
             terminal.writeln(`${nodePrefix}${node.name}${node.type === 'folder' ? '/' : ''}`);
-            
+
             // Recursively print children
             if (node.type === 'folder' && node.children) {
               displayFileTree(node.children, terminal, currentPrefix, isLastNode);
@@ -679,14 +685,14 @@ export default function ProjectView({ project }: { project: Project }) {
 
   const handleFileClick = async (file: FileNode) => {
     if (file.type === 'folder') return;
-    
+
     try {
       // Check if file is already open in a tab
       const existingTab = tabs.find(tab => tab.file.appwriteId === file.appwriteId);
-      
+
       if (existingTab) {
         // If file is already open, just activate its tab
-        setTabs(tabs => 
+        setTabs(tabs =>
           tabs.map(tab => ({
             ...tab,
             isActive: tab.file.appwriteId === file.appwriteId
@@ -695,9 +701,18 @@ export default function ProjectView({ project }: { project: Project }) {
         setActiveTab(existingTab);
       } else {
         // If file is not open, create a new tab
-        const response = await fetch(`/api/files/content/${file.appwriteId}`);
-        const content = await response.text();
-        
+        const fileType = getFileTypeInfo(file.name).language;
+        let content;
+
+        if (fileType === 'image' || fileType === 'video') {
+          // For media files, use the file URL directly
+          content = `/api/files/content/${file.appwriteId}`;
+        } else {
+          // For other files, get the text content
+          const response = await fetch(`/api/files/content/${file.appwriteId}`);
+          content = await response.text();
+        }
+
         // Add new tab and deactivate others
         setTabs(tabs => [
           ...tabs.map(tab => ({ ...tab, isActive: false })),
@@ -723,10 +738,10 @@ export default function ProjectView({ project }: { project: Project }) {
 
   const handleTabClose = (e: React.MouseEvent, tab: EditorTab) => {
     e.stopPropagation();
-    
+
     const newTabs = tabs.filter(t => t.file.appwriteId !== tab.file.appwriteId);
     setTabs(newTabs);
-    
+
     if (tab.isActive && newTabs.length > 0) {
       // If closing active tab, activate the last tab
       const lastTab = newTabs[newTabs.length - 1];
@@ -740,15 +755,15 @@ export default function ProjectView({ project }: { project: Project }) {
   const handleDownload = async () => {
     try {
       const zip = new JSZip();
-      
+
       // Add each file to the zip
       for (const tab of tabs) {
         zip.file(tab.file.path, tab.content);
       }
-      
+
       // Generate the zip file
       const content = await zip.generateAsync({ type: 'blob' });
-      
+
       // Create a download link
       const url = window.URL.createObjectURL(content);
       const link = document.createElement('a');
@@ -758,7 +773,7 @@ export default function ProjectView({ project }: { project: Project }) {
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      
+
       toast.success('Download started');
     } catch (error) {
       console.error('Error downloading files:', error);
@@ -772,251 +787,289 @@ export default function ProjectView({ project }: { project: Project }) {
     setActiveSidebarTab(tab);
   };
 
+  // Generate meta description
+  const metaDescription = `View and edit ${project.name} - A project by ${project.owner.name || 'Anonymous'}. Explore files, code, and collaborate in real-time.`;
+
   return (
-    <div 
-      suppressHydrationWarning 
-      className="h-screen overflow-hidden transition-colors duration-200 bg-background text-foreground"
-    >
-      {/* Menu Bar */}
-      <div className="h-10 border-b border-border bg-background flex items-center px-4">
-        <div className="flex items-center space-x-4">
-          <span className="text-sm font-medium text-foreground">
-            {project.name}
-          </span>
-          <span className="text-sm text-muted-foreground">
-            {project.owner.name || 'Anonymous'}
-          </span>
-        </div>
-      </div>
+    <>
+      <Head>
+        <title>{project.name}</title>
+        <meta name="description" content={metaDescription} />
+        <meta name="keywords" content={`code editor, ${project.name}, programming, development, collaboration`} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:title" content={project.name} />
+        <meta property="og:description" content={metaDescription} />
+        <meta property="og:image" content={project.owner.image || '/default-project-image.png'} />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={project.name} />
+        <meta name="twitter:description" content={metaDescription} />
+        <meta name="twitter:image" content={project.owner.image || '/default-project-image.png'} />
+        
+        {/* Additional SEO meta tags */}
+        <meta name="author" content={project.owner.name || 'Anonymous'} />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href={`/projects/${project.id}`} />
+      </Head>
 
-      {/* Activity Bar */}
       <div 
-        className="fixed left-0 top-10 h-[calc(100vh-2.5rem)] w-12 transition-colors duration-200 bg-muted border-r border-border flex flex-col items-center py-2 z-50"
+        suppressHydrationWarning 
+        className="h-screen overflow-hidden transition-colors duration-200 bg-background text-foreground"
+        role="application"
+        aria-label={`${project.name} code editor`}
       >
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-10 w-10 transition-colors duration-200 md:hidden"
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-        >
-          <Menu className="h-5 w-5" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-10 w-10 transition-colors duration-200"
-          onClick={() => handleSidebarTabClick('explorer')}
-        >
-          <File className="h-5 w-5" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-10 w-10 transition-colors duration-200"
-          onClick={() => handleSidebarTabClick('search')}
-        >
-          <Search className="h-5 w-5" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-10 w-10 transition-colors duration-200"
-          onClick={() => handleSidebarTabClick('source')}
-        >
-          <GitBranch className="h-5 w-5" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-10 w-10 transition-colors duration-200"
-          onClick={() => handleSidebarTabClick('git')}
-        >
-          <GitPullRequest className="h-5 w-5" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-10 w-10 transition-colors duration-200"
-          onClick={() => handleSidebarTabClick('debug')}
-        >
-          <Bug className="h-5 w-5" />
-        </Button>
-        <Button 
-          variant="ghost" 
-          size="icon" 
-          className="h-10 w-10 transition-colors duration-200"
-          onClick={() => handleSidebarTabClick('extensions')}
-        >
-          <LayoutGrid className="h-5 w-5" />
-        </Button>
-        <div className="flex-1" />
-        <div className="mb-2">
-          <UserProfile user={project.owner} collapsed={true} />
-        </div>
-      </div>
+        {/* Menu Bar */}
+        <header className="h-10 border-b border-border bg-background flex items-center px-4">
+          <nav className="flex items-center space-x-4" aria-label="Project navigation">
+            <span className="text-sm font-medium text-foreground">
+              <HoverCard>
+                <HoverCardTrigger>
+                  <Button variant="link" aria-label={`Project owner: ${project.owner.name || 'Anonymous'}`}>
+                    @{project.owner.name || 'Anonymous'}
+                  </Button>
+                </HoverCardTrigger>
+                <HoverCardContent className="flex items-center gap-2">
+                  <span className='text-small'>This Project Is Created By {project.owner.name || 'Anonymous'}</span>
+                </HoverCardContent>
+              </HoverCard>
+              <span>/</span>
+              <span className='ml-2'>{project.name}</span>
+            </span>
+          </nav>
+        </header>
 
-      {/* Main Content */}
-      <div className="pl-12">
-        {/* Split View */}
-        <div className="flex h-[calc(100vh-2.5rem)] overflow-hidden">
-          {/* Sidebar */}
-          <div 
-            className={`w-64 border-r transition-colors duration-200 bg-muted/50 border-border ${
-              isSidebarOpen ? 'block' : 'hidden md:block'
-            }`}
-          >
-            <div className="h-10 flex items-center px-4 border-b transition-colors duration-200 border-border">
-              <span className="text-sm font-medium text-muted-foreground">EXPLORER</span>
+        {/* Activity Bar */}
+        <aside 
+          className="fixed left-0 top-10 h-[calc(100vh-2.5rem)] w-12 transition-colors duration-200 bg-muted border-r border-border flex flex-col items-center py-2 z-50"
+          aria-label="Activity bar"
+        >
+          <nav className="flex flex-col items-center h-full" aria-label="Activity navigation">
+            <div className="flex flex-col items-center space-y-2">
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-10 w-10 transition-colors duration-200 md:hidden"
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                aria-label="Toggle sidebar"
+              >
+                <Menu className="h-5 w-5" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-10 w-10 transition-colors duration-200"
+                onClick={() => handleSidebarTabClick('explorer')}
+              >
+                <File className="h-5 w-5" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-10 w-10 transition-colors duration-200"
+                onClick={() => handleSidebarTabClick('search')}
+              >
+                <Search className="h-5 w-5" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-10 w-10 transition-colors duration-200"
+                onClick={() => handleSidebarTabClick('source')}
+              >
+                <GitBranch className="h-5 w-5" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-10 w-10 transition-colors duration-200"
+                onClick={() => handleSidebarTabClick('git')}
+              >
+                <GitPullRequest className="h-5 w-5" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-10 w-10 transition-colors duration-200"
+                onClick={() => handleSidebarTabClick('debug')}
+              >
+                <Bug className="h-5 w-5" />
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-10 w-10 transition-colors duration-200"
+                onClick={() => handleSidebarTabClick('extensions')}
+              >
+                <LayoutGrid className="h-5 w-5" />
+              </Button>
             </div>
-            <div className="overflow-y-auto h-[calc(100%-2.5rem)] bg-background">
-              {fileTree.map((node, index) => (
-                <FileTreeNode 
-                  key={index} 
-                  node={node} 
-                  onFileClick={handleFileClick}
-                />
-              ))}
+            <div className="mt-auto pb-2">
+              <UserProfile user={project.owner} collapsed={true} />
             </div>
-          </div>
+          </nav>
+        </aside>
 
-          {/* Editor Area */}
-          <div className="flex-1 flex flex-col">
-                {/* Editor Tabs */}
-            <div className="flex-none border-b border-border bg-background">
-              <div className="flex items-center h-10 px-2">
-                {tabs.map((tab) => {
-                  const fileTypeInfo = getFileTypeInfo(tab.file.name);
-                  const Icon = fileTypeInfo.icon;
-                  return (
-                    <div
-                      key={tab.file.path}
-                      className={`group flex items-center h-10 px-3 text-sm font-medium cursor-pointer border-r border-border ${
-                        tab.isActive 
+        {/* Main Content */}
+        <main className="pl-12">
+          {/* Split View */}
+          <div className="flex h-[calc(100vh-2.5rem)] overflow-hidden">
+            {/* Sidebar */}
+            <aside 
+              className={`w-64 border-r transition-colors duration-200 bg-muted/50 border-border ${isSidebarOpen ? 'block' : 'hidden md:block'}`}
+              aria-label="File explorer"
+            >
+              <header className="h-10 flex items-center px-4 border-b transition-colors duration-200 border-border">
+                <h2 className="text-sm font-medium text-muted-foreground">EXPLORER</h2>
+              </header>
+              <nav className="overflow-y-auto h-[calc(100%-2.5rem)] bg-background" aria-label="File tree">
+                {fileTree.map((node, index) => (
+                  <FileTreeNode 
+                    key={index} 
+                    node={node} 
+                    onFileClick={handleFileClick}
+                  />
+                ))}
+              </nav>
+            </aside>
+
+            {/* Editor Area */}
+            <section className="flex-1 flex flex-col" aria-label="Editor area">
+              {/* Editor Tabs */}
+              <nav className="flex-none border-b border-border bg-background" aria-label="File tabs">
+                <div className="flex items-center h-10 px-2 overflow-x-auto scrollbar-thin scrollbar-thumb-muted-foreground/20 scrollbar-track-transparent">
+                  {tabs.map((tab) => {
+                    const fileTypeInfo = getFileTypeInfo(tab.file.name);
+                    const Icon = fileTypeInfo.icon;
+                    return (
+                      <div
+                        key={tab.file.path}
+                        className={`group flex items-center h-10 px-3 text-sm font-medium cursor-pointer border-r border-border transition-all duration-200 ${tab.isActive
                           ? 'bg-background text-foreground border-t-2 border-t-primary'
                           : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-                      }`}
-                      onClick={() => handleTabClick(tab)}
-                    >
-                      <Icon className="h-4 w-4 mr-2" />
-                      <span className="truncate max-w-[150px]">{tab.file.name}</span>
-                      <button
-                        className="ml-2 p-1 rounded-sm opacity-0 group-hover:opacity-100 hover:bg-muted"
-                        onClick={(e) => handleTabClose(e, tab)}
+                        }`}
+                        onClick={() => handleTabClick(tab)}
+                        role="tab"
+                        aria-selected={tab.isActive}
+                        aria-label={`${tab.file.name} tab`}
                       >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  );
-                })}
-              </div>
+                        <Icon className="h-4 w-4 mr-2 transition-colors duration-200" aria-hidden="true" />
+                        <span className="truncate max-w-[150px]">{tab.file.name}</span>
+                        <button
+                          className="ml-2 p-1 rounded-sm opacity-0 group-hover:opacity-100 hover:bg-muted transition-all duration-200"
+                          onClick={(e) => handleTabClose(e, tab)}
+                          aria-label={`Close ${tab.file.name} tab`}
+                        >
+                          <X className="h-3 w-3" aria-hidden="true" />
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
-                
-                {/* Editor */}
-            <div className="flex-1 relative bg-white dark:bg-[#1E1E1E]">
-              {activeTab && (
-                <>
-                  {/* Breadcrumb Navigation */}
-                  <div className="h-8 flex items-center px-4 border-b border-border bg-background">
-                    <div className="flex items-center space-x-1 text-sm text-muted-foreground">
-                      {activeTab.file.path.split('/').map((part, index, array) => (
-                        <div key={index} className="flex items-center">
-                          {index > 0 && (
-                            <ChevronRight className="h-4 w-4 mx-1 text-muted-foreground/50" />
-                          )}
-                          <span className={`${index === array.length - 1 ? 'text-foreground' : 'hover:text-foreground cursor-pointer'}`}>
-                            {part}
-                          </span>
+              </nav>
+
+              {/* Editor */}
+              <div className="flex-1 relative bg-white dark:bg-[#1E1E1E]" role="region" aria-label="Editor content">
+                {activeTab && (
+                  <>
+                    {getFileTypeInfo(activeTab.file.name).language === 'image' ? (
+                      <figure className="h-full w-full flex items-center justify-center bg-white dark:bg-[#1E1E1E] p-4">
+                        <div className="relative w-full h-full flex items-center justify-center">
+                          <img 
+                            src={activeTab.content} 
+                            alt={activeTab.file.name}
+                            className="max-h-full max-w-full object-contain rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
+                            loading="lazy"
+                          />
                         </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {getFileTypeInfo(activeTab.file.name).language === 'image' ? (
-                    <div className="h-full w-full flex items-center justify-center bg-white dark:bg-[#1E1E1E]">
-                      <img 
-                        src={activeTab.content} 
-                        alt={activeTab.file.name}
-                        className="max-h-full max-w-full object-contain"
+                      </figure>
+                    ) : getFileTypeInfo(activeTab.file.name).language === 'video' ? (
+                      <figure className="h-full w-full flex items-center justify-center bg-white dark:bg-[#1E1E1E] p-4">
+                        <div className="relative w-full h-full flex items-center justify-center">
+                          <video 
+                            src={activeTab.content} 
+                            controls
+                            className="max-h-full max-w-full rounded-lg shadow-lg transition-all duration-200 hover:shadow-xl"
+                            preload="metadata"
+                            aria-label={`Video: ${activeTab.file.name}`}
+                          >
+                            Your browser does not support the video tag.
+                          </video>
+                        </div>
+                      </figure>
+                    ) : (
+                      <Editor
+                        height="100%"
+                        defaultLanguage={getFileTypeInfo(activeTab.file.name).language}
+                        value={activeTab.content}
+                        theme={currentTheme === 'dark' ? 'custom-dark' : 'custom-light'}
+                        options={{
+                          minimap: { enabled: false },
+                          fontSize: 14,
+                          lineNumbers: 'on',
+                          roundedSelection: false,
+                          scrollBeyondLastLine: false,
+                          readOnly: true,
+                          wordWrap: 'on',
+                          padding: { top: 16, bottom: 16 },
+                          renderLineHighlight: 'all',
+                          renderWhitespace: 'selection',
+                          scrollbar: {
+                            vertical: 'visible',
+                            horizontal: 'visible',
+                            useShadows: false,
+                            verticalScrollbarSize: 10,
+                            horizontalScrollbarSize: 10,
+                          },
+                          bracketPairColorization: {
+                            enabled: true,
+                          },
+                          guides: {
+                            bracketPairs: true,
+                            indentation: true,
+                            highlightActiveIndentation: true,
+                          },
+                        }}
+                        onMount={handleEditorDidMount}
+                        aria-label={`Code editor for ${activeTab.file.name}`}
                       />
-                    </div>
-                  ) : getFileTypeInfo(activeTab.file.name).language === 'video' ? (
-                    <div className="h-full w-full flex items-center justify-center bg-white dark:bg-[#1E1E1E]">
-                      <video 
-                        src={activeTab.content} 
-                        controls
-                        className="max-h-full max-w-full"
-                      >
-                        Your browser does not support the video tag.
-                      </video>
-                    </div>
-                  ) : (
-                    <Editor
-                      height="calc(100% - 2rem)"
-                      defaultLanguage={getFileTypeInfo(activeTab.file.name).language}
-                      value={activeTab.content}
-                      theme={currentTheme === 'dark' ? 'custom-dark' : 'custom-light'}
-                      options={{
-                        minimap: { enabled: false },
-                        fontSize: 14,
-                        lineNumbers: 'on',
-                        roundedSelection: false,
-                        scrollBeyondLastLine: false,
-                        readOnly: true,
-                        wordWrap: 'on',
-                        padding: { top: 16, bottom: 16 },
-                        renderLineHighlight: 'all',
-                        renderWhitespace: 'selection',
-                        scrollbar: {
-                          vertical: 'visible',
-                          horizontal: 'visible',
-                          useShadows: false,
-                          verticalScrollbarSize: 10,
-                          horizontalScrollbarSize: 10,
-                        },
-                        bracketPairColorization: {
-                          enabled: true,
-                        },
-                        guides: {
-                          bracketPairs: true,
-                          indentation: true,
-                          highlightActiveIndentation: true,
-                        },
-                      }}
-                      onMount={handleEditorDidMount}
-                    />
-                  )}
-                </>
-              )}
-            </div>
+                    )}
+                  </>
+                )}
+              </div>
 
-            {/* Status Bar */}
-            <div className="flex-none h-6 border-t border-border bg-muted">
-              <div className="flex items-center justify-between h-full px-4">
-                <div className="flex items-center space-x-4">
-                  <span className="text-xs text-muted-foreground">
-                    {activeTab ? getFileTypeInfo(activeTab.file.name).language.toUpperCase() : ''}
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    {activeTab ? `${activeTab.content.split('\n').length} lines` : ''}
-                  </span>
+              {/* Status Bar */}
+              <footer className="flex-none h-6 border-t border-border bg-muted">
+                <div className="flex items-center justify-between h-full px-4">
+                  <div className="flex items-center space-x-4">
+                    <span className="text-xs text-muted-foreground">
+                      {activeTab ? getFileTypeInfo(activeTab.file.name).language.toUpperCase() : ''}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {activeTab ? `${activeTab.content.split('\n').length} lines` : ''}
+                    </span>
+                  </div>
+                  <div className="flex items-center space-x-4">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-6 px-2 text-muted-foreground hover:text-foreground relative overflow-hidden group"
+                      onClick={handleDownload}
+                      aria-label="Download project files"
+                    >
+                      <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shine" />
+                      <DownloadIcon className="h-3 w-3 mr-1" aria-hidden="true" />
+                      <span className="text-xs">Download</span>
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-                    size="sm"
-                    className="h-6 px-2 text-muted-foreground hover:text-foreground relative overflow-hidden group"
-                    onClick={handleDownload}
-                  >
-                    <div className="absolute inset-0 -translate-x-full group-hover:translate-x-full transition-transform duration-1000 bg-gradient-to-r from-transparent via-white/20 to-transparent animate-shine" />
-                    <DownloadIcon className="h-3 w-3 mr-1" />
-                    <span className="text-xs">Download</span>
-            </Button>
+              </footer>
+            </section>
           </div>
-        </div>
-            </div>
-          </div>
-        </div>
+        </main>
       </div>
-    </div>
+    </>
   );
 }
