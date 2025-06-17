@@ -12,31 +12,56 @@ import { LogOut, MoreVertical, Moon, Monitor, Sun } from "lucide-react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
 import { useTheme } from "next-themes";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from "react";
 
 interface UserProfileProps {
   user: {
     name?: string | null;
     email?: string | null;
     image?: string | null;
-  };
+  } | null;
   collapsed?: boolean;
 }
 
 export function UserProfile({ user, collapsed = false }: UserProfileProps) {
   const { setTheme } = useTheme();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleThemeChange = (theme: string) => {
     setTheme(theme);
   };
 
+  if (!user) {
+    return (
+      <div className="px-2 py-3" suppressHydrationWarning>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center w-full">
+            <Skeleton className="h-6 w-6 rounded-full" />
+            {!collapsed && (
+              <div className="ml-2 flex flex-col items-start gap-1">
+                <Skeleton className="h-4 w-24" />
+                <Skeleton className="h-3 w-32" />
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="px-2 py-3">
+    <div className="px-2 py-3" suppressHydrationWarning>
       <div className="flex items-center justify-between">
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
-              className="w-full h-13 px-2 justify-start rounded-md dark:text-white hover:bg-muted/50"
+              className="w-full h-13 px-2 justify-start rounded-md hover:bg-muted/50"
             >
               <div className="flex items-center">
                 <Avatar className="h-6 w-6">
@@ -79,8 +104,6 @@ export function UserProfile({ user, collapsed = false }: UserProfileProps) {
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-
-
       </div>
     </div>
   );

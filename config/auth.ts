@@ -5,6 +5,11 @@ import GoogleProvider from "next-auth/providers/google";
 import GithubProvider from "next-auth/providers/github";
 import CredentialsProvider from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
+import { UserRole } from "@prisma/client";
+
+interface ExtendedUser {
+  role?: UserRole;
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -12,10 +17,24 @@ export const authOptions: NextAuthOptions = {
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          prompt: "consent",
+          access_type: "offline",
+          response_type: "code",
+          scope: "openid email profile"
+        }
+      },
+      httpOptions: {
+        timeout: 10000 // Increase timeout to 10 seconds
+      }
     }),
     GithubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      httpOptions: {
+        timeout: 10000 // Increase timeout to 10 seconds
+      }
     }),
     CredentialsProvider({
       name: "credentials",
@@ -72,13 +91,14 @@ export const authOptions: NextAuthOptions = {
       }
       
       if (user) {
-        token.role = user.role;
+        token.role = (user as ExtendedUser).role;
       }
       
       return token;
     },
     async session({ session, token }) {
       if (token.sub) {
+        try {
         const user = await prisma.user.findUnique({
           where: { id: token.sub },
           select: { role: true },
@@ -86,6 +106,9 @@ export const authOptions: NextAuthOptions = {
         if (user && session.user) {
           (session.user as any).role = user.role;
           (session.user as any).id = token.sub;
+          }
+        } catch (error) {
+          console.error("Error fetching user in session callback:", error);
         }
       }
       return {
@@ -98,4 +121,16 @@ export const authOptions: NextAuthOptions = {
       };
     },
   },
+  events: {
+    async signIn({ user }) {
+      try {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastLogin: new Date() }
+        });
+      } catch (error) {
+        console.error("Error updating last login:", error);
+      }
+    }
+  }
 }; 

@@ -178,7 +178,7 @@ export function Sidebar({ className, collapsed, setCollapsed, mobileOpen, setMob
               })}
             </div>
         </ScrollArea>
-        <UserProfile user={session?.user || {}} collapsed={collapsed} />
+        <UserProfile user={session?.user || null} collapsed={collapsed} />
       </div>
     </TooltipProvider>
   );

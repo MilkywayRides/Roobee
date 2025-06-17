@@ -29,6 +29,7 @@ model User {
   role          UserRole  @default(USER)
   resetToken    String?   @unique
   resetTokenExpiry DateTime?
+  lastLogin     DateTime?
   accounts      Account[]
   sessions      Session[]
   passwordResetTokens PasswordResetToken[]

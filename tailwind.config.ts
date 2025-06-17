@@ -19,18 +19,23 @@ const config = {
     },
     extend: {
       keyframes: {
-        shimmer: {
-          '0%': { transform: 'translateX(-100%)' },
-          '100%': { transform: 'translateX(100%)' },
+        "accordion-down": {
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
-        bounce: {
-          '0%, 100%': { transform: 'translateY(0)' },
-          '50%': { transform: 'translateY(-25%)' },
-        }
+        "accordion-up": {
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        shine: {
+          '0%': { transform: 'translateX(-100%)' },
+          '20%, 100%': { transform: 'translateX(100%)' },
+        },
       },
       animation: {
-        shimmer: 'shimmer 2s linear infinite',
-        bounce: 'bounce 1s infinite',
+        "accordion-down": "accordion-down 0.2s ease-out",
+        "accordion-up": "accordion-up 0.2s ease-out",
+        "shine": "shine 3s ease-in-out infinite",
       },
       colors: {
         border: "hsl(var(--border))",
@@ -74,7 +79,7 @@ const config = {
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwindcss-animate")],
 } satisfies Config
 
 export default config 
