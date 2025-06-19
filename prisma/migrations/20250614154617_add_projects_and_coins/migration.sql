@@ -1,5 +1,6 @@
 -- AlterTable
 ALTER TABLE "User" ADD COLUMN     "coin" INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "lastLogin" TIMESTAMP(3);
 
 -- CreateTable
 CREATE TABLE "Project" (

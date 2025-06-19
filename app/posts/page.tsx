@@ -1,16 +1,18 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
 
 interface Post {
   id: string;
   title: string;
-  content: string;
+  description?: string;
+  tags: string[];
+  feature: boolean;
   createdAt: string;
   author: {
     id: string;
@@ -19,7 +21,7 @@ interface Post {
   };
 }
 
-export default function AdminPostsPage() {
+export default function PostsPage() {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -37,12 +39,7 @@ export default function AdminPostsPage() {
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-2 md:px-0">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Posts</h1>
-        <Button asChild>
-          <Link href="/admin/posts/create">Add Post</Link>
-        </Button>
-      </div>
+      <h1 className="text-3xl font-bold mb-6">All Posts</h1>
       {loading ? (
         <div className="space-y-4">
           {[...Array(3)].map((_, i) => (
@@ -77,17 +74,28 @@ export default function AdminPostsPage() {
                     <span>{post.author?.name?.[0] || "U"}</span>
                   )}
                 </Avatar>
-                <div>
-                  <CardTitle className="text-lg font-semibold mb-1">{post.title}</CardTitle>
+                <div className="flex-1">
+                  <CardTitle className="text-lg font-semibold mb-1">
+                    <Link href={`/posts/${post.id}`} className="hover:underline">
+                      {post.title}
+                    </Link>
+                  </CardTitle>
                   <div className="text-xs text-muted-foreground">
                     {post.author?.name || "Unknown"} &middot; {new Date(post.createdAt).toLocaleDateString()}
                   </div>
                 </div>
+                {post.feature && <Badge variant="secondary">Featured</Badge>}
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-muted-foreground whitespace-pre-line">
-                  {post.content}
+                <div className="text-sm text-muted-foreground mb-2">
+                  {post.description}
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  {post.tags?.map((tag) => (
+                    <Badge key={tag} variant="outline">{tag}</Badge>
+                  ))}
+                </div>
+                <Link href={`/posts/${post.id}`} className="text-blue-600 hover:underline text-sm font-medium block mt-2">Read more</Link>
               </CardContent>
             </Card>
           ))}

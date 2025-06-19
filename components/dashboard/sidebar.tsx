@@ -51,7 +51,7 @@ const navigation = [
   },
   {
     name: "Noding",
-    href: "/admin/noding",
+    href: "/admin/node",
     icon: Settings,
   },
   {
@@ -61,7 +61,7 @@ const navigation = [
   },
   {
     name: "Posts",
-    href: "/admin/analytics",
+    href: "/admin/posts",
     icon: BarChart3,
   },
   {
