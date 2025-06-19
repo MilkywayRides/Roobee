@@ -58,8 +58,10 @@ export default function PostDetailPage() {
         setLikeCount(likes.filter((l: any) => l.value === 1).length);
         setDislikeCount(likes.filter((l: any) => l.value === -1).length);
         // Set current user's like/dislike state
-        if (session?.user && session.user.id) {
-          const userLike = likes.find((l: any) => l.userId === session.user.id);
+        let userId: string | undefined = undefined;
+        if (session?.user && typeof session.user.id === "string") {
+          userId = session.user.id;
+          const userLike = likes.find((l: any) => l.userId === userId);
           setLikeState(userLike?.value || 0);
         }
       })
@@ -96,8 +98,10 @@ export default function PostDetailPage() {
           const likes = data.likes || [];
           setLikeCount(likes.filter((l: any) => l.value === 1).length);
           setDislikeCount(likes.filter((l: any) => l.value === -1).length);
-          if (session?.user && session.user.id) {
-            const userLike = likes.find((l: any) => l.userId === session.user.id);
+          let userId: string | undefined = undefined;
+          if (session?.user && typeof session.user.id === "string") {
+            userId = session.user.id;
+            const userLike = likes.find((l: any) => l.userId === userId);
             setLikeState(userLike?.value || 0);
           }
         });
@@ -111,6 +115,7 @@ export default function PostDetailPage() {
       router.push("/login");
       return;
     }
+    if (!post || !post.author?.id) return;
     setFollowLoading(true);
     try {
       await fetch(`/api/users/${post.author.id}/follow`, {
@@ -224,7 +229,7 @@ export default function PostDetailPage() {
                 >
                   👎 {dislikeCount}
                 </Button>
-                {session?.user && post.author?.id !== session.user.id && (
+                {session?.user && post && typeof session.user.id === "string" && post.author?.id !== session.user.id && (
                   <Button
                     variant={isFollowing ? "secondary" : "outline"}
                     size="sm"
