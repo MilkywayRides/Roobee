@@ -68,7 +68,11 @@ const FileTree = ({ files, onFileClick }: FileTreeProps) => {
         </div>
         {isFolder && isExpanded && node.children && (
           <div>
-            {node.children.map(child => renderNode(child, level + 1))}
+            {node.children.map(child => (
+              <div key={child.path}>
+                {renderNode(child, level + 1)}
+              </div>
+            ))}
           </div>
         )}
       </div>
@@ -77,7 +81,11 @@ const FileTree = ({ files, onFileClick }: FileTreeProps) => {
 
   return (
     <div className="w-full overflow-auto">
-      {files.map(file => renderNode(file))}
+      {files.map(file => (
+        <div key={file.path}>
+          {renderNode(file)}
+        </div>
+      ))}
     </div>
   );
 };

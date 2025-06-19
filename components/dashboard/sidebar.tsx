@@ -50,17 +50,22 @@ const navigation = [
     icon: Users,
   },
   {
+    name: "Noding",
+    href: "/admin/noding",
+    icon: Settings,
+  },
+  {
     name: "Projects",
     href: "/admin/projects",
     icon: FileText,
   },
   {
-    name: "Analytics",
+    name: "Posts",
     href: "/admin/analytics",
     icon: BarChart3,
   },
   {
-    name: "Settings",
+    name: "Client Settings",
     href: "/admin/settings",
     icon: Settings,
   },

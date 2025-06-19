@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "react-hot-toast";
 
 interface Project {
@@ -48,48 +49,81 @@ export default function AdminProjectsPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto py-8">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Projects</h1>
+    <div className="max-w-3xl mx-auto py-8 px-2 md:px-0">
+      <div className="sticky top-0 z-10 bg-background/95 backdrop-blur border-b mb-6 flex items-center justify-between py-4 px-2 md:px-6">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Projects</h1>
         <Button asChild>
-          <Link href="/admin/projects/create">Create Project</Link>
+          <Link href="/admin/projects/create">New Project</Link>
         </Button>
       </div>
       {loading ? (
         <div>Loading...</div>
+      ) : projects.length === 0 ? (
+        <div className="text-center text-muted-foreground py-16">No projects found.</div>
       ) : (
-        <div className="space-y-4">
+        <ul className="space-y-3">
           {projects.map((project) => (
-            <Card key={project.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <span>{project.name}</span>
-                  {!project.isFree && (
-                    <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-0.5 rounded">{project.coinCost} coins</span>
-                  )}
-                  {project.isFree && (
-                    <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded">Free</span>
-                  )}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-muted-foreground mb-2">{project.description}</div>
-                <div className="text-xs text-muted-foreground">Files: {project.files.length}</div>
-                <div className="flex items-center gap-4 mt-2">
-                  <Link href={`/admin/projects/${project.id}`} className="text-blue-600 hover:underline text-sm">View Details</Link>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    disabled={deletingId === project.id}
-                    onClick={() => handleDelete(project.id)}
-                  >
-                    {deletingId === project.id ? "Deleting..." : "Delete"}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+            <li key={project.id}>
+              <Card className="border shadow-sm hover:shadow-md transition-shadow group">
+                <CardContent className="py-4 px-5 flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Link
+                        href={`/admin/projects/${project.id}`}
+                        className="font-semibold text-base text-blue-600 hover:underline truncate max-w-[14rem]"
+                      >
+                        {project.name}
+                      </Link>
+                      {!project.isFree && (
+                        <Badge variant="secondary" className="text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200">
+                          {project.coinCost} coins
+                        </Badge>
+                      )}
+                      {project.isFree && (
+                        <Badge variant="outline" className="text-xs font-medium bg-green-100 text-green-800 border border-green-200">
+                          Free
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        className="text-xs px-3"
+                      >
+                        <Link href={`/admin/projects/${project.id}`}>View</Link>
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        asChild
+                        className="text-xs px-3"
+                      >
+                        <Link href={`/admin/projects/${project.id}/edit`}>Edit</Link>
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="text-xs px-3"
+                        disabled={deletingId === project.id}
+                        onClick={() => handleDelete(project.id)}
+                      >
+                        {deletingId === project.id ? "Deleting..." : "Delete"}
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="text-muted-foreground text-sm mt-1 min-h-[1.5rem]">
+                    {project.description || <span className="italic text-xs">No description</span>}
+                  </div>
+                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                    <span>Files: {project.files.length}</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </li>
           ))}
-        </div>
+        </ul>
       )}
     </div>
   );

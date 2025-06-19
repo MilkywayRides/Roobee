@@ -83,4 +83,51 @@ export async function GET(
     }
     return NextResponse.json({ error: 'Failed to fetch file content' }, { status: 500 });
   }
+}
+
+export async function PATCH(
+  req: Request,
+  context: { params: { appwriteId: string } }
+) {
+  try {
+    const session = await getServerSession(authOptions) as ExtendedSession | null;
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const params = await Promise.resolve(context.params);
+    const { appwriteId } = params;
+    const { content } = await req.json();
+
+    // Find the file and check permissions
+    const file = await prisma.projectFile.findFirst({
+      where: { appwriteId },
+      include: { project: true },
+    });
+
+    if (!file) {
+      return NextResponse.json({ error: 'File not found' }, { status: 404 });
+    }
+
+    const isOwner = file.project.ownerId === session.user.id;
+    if (!isOwner) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    // TODO: Update the file content in your storage (Appwrite, S3, etc.)
+    // Example for Appwrite:
+    // await appwrite.storage.updateFileContent(appwriteId, content);
+
+    // If you store file content in the DB, update it here:
+    // await prisma.projectFile.update({
+    //   where: { appwriteId },
+    //   data: { content },
+    // });
+
+    // Respond with success
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[FILE_PATCH]', error);
+    return NextResponse.json({ error: 'Failed to update file content' }, { status: 500 });
+  }
 } 

@@ -23,7 +23,7 @@ export async function GET(
 ) {
     try {
         const session = await getServerSession(authOptions) as ExtendedSession | null;
-        const projectId = params.id;
+        const { id: projectId } = await Promise.resolve(params);
 
         const project = await prisma.project.findUnique({
             where: { id: projectId },

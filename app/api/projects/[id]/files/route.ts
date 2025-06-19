@@ -60,9 +60,10 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const { id } = await Promise.resolve(params);
     const files = await prisma.projectFile.findMany({
       where: {
-        projectId: params.id
+        projectId: id
       }
     });
 
