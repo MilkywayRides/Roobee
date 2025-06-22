@@ -160,3 +160,18 @@ model Follow {
 
   @@unique([followerId, followingId])
 }
+
+model SecurityAuditLog {
+  id        String   @id @default(uuid())
+  event     String   // Type of security event
+  userId    String?  // User ID if applicable
+  details   String?  // JSON string with additional details
+  ipAddress String?  // IP address of the request
+  userAgent String?  // User agent string
+  timestamp DateTime @default(now())
+
+  @@index([event])
+  @@index([userId])
+  @@index([timestamp])
+  @@index([ipAddress])
+}
