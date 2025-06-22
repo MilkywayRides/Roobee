@@ -61,7 +61,7 @@ function buildFileTree(files: any[]): any[] {
 export default async function ProjectPage({ params }: PageProps) {
   try {
     const session = await getServerSession(authOptions);
-    console.log('Session:', session?.user?.id);
+    console.log('Session user:', (session?.user as any)?.id);
     
     if (!session?.user) {
       console.log('No session, redirecting to login');

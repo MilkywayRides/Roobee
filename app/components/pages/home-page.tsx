@@ -90,7 +90,7 @@ const PostCardSkeleton = () => (
 );
 
 // --- MAIN HOME COMPONENT ---
-export default function Home() {
+export function HomePage() {
   const [featuredPosts, setFeaturedPosts] = useState<Post[]>([]);
   const [featuredProjects, setFeaturedProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
