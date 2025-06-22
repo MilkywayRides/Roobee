@@ -91,11 +91,6 @@ export async function POST(req: Request) {
     // Check if user exists and is verified
     const existingUser = await prisma.user.findUnique({
       where: { email },
-      include: {
-        projects: true,
-        posts: true,
-        securityAuditLogs: true,
-      },
     });
 
     if (existingUser?.emailVerified) {
@@ -114,36 +109,12 @@ export async function POST(req: Request) {
     // If user exists but is not verified, delete the old record and related data
     if (existingUser) {
       console.log("[REGISTER] Deleting unverified user and related data");
-      
       // Delete related records first to avoid foreign key constraints
-      await prisma.$transaction(async (tx) => {
-        // Delete projects
-        if (existingUser.projects.length > 0) {
-          await tx.project.deleteMany({
-            where: { ownerId: existingUser.id },
-          });
-        }
-        
-        // Delete posts
-        if (existingUser.posts.length > 0) {
-          await tx.post.deleteMany({
-            where: { authorId: existingUser.id },
-          });
-        }
-        
-        // Delete security audit logs
-        if (existingUser.securityAuditLogs.length > 0) {
-          await tx.securityAuditLog.deleteMany({
-            where: { userId: existingUser.id },
-          });
-        }
-        
-        // Finally delete the user
-        await tx.user.delete({
-          where: { id: existingUser.id },
-        });
-      });
-      
+      await prisma.$transaction([
+        prisma.project.deleteMany({ where: { ownerId: existingUser.id } }),
+        prisma.post.deleteMany({ where: { authorId: existingUser.id } }),
+        prisma.user.delete({ where: { id: existingUser.id } }),
+      ]);
       await logSecurityEvent('REGISTER_DELETED_UNVERIFIED_USER', existingUser.id, {
         email: await hashSensitiveData(email),
         ip: clientIP,

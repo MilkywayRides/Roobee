@@ -232,15 +232,23 @@ export function detectSuspiciousActivity(userAgent: string, ip: string): boolean
   return suspiciousPatterns.some(pattern => pattern.test(userAgent));
 }
 
-// Generate CSRF token
+// Generate CSRF token using Web Crypto API
 export function generateCSRFToken(): string {
-  return crypto.randomBytes(32).toString('hex');
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-// Validate CSRF token
-export function validateCSRFToken(token: string, storedToken: string): boolean {
-  return crypto.timingSafeEqual(
-    Buffer.from(token, 'hex'),
-    Buffer.from(storedToken, 'hex')
-  );
+// Validate CSRF token using Web Crypto API
+export async function validateCSRFToken(token: string, storedToken: string): Promise<boolean> {
+  if (token.length !== storedToken.length) {
+    return false;
+  }
+  
+  // Use a timing-safe comparison
+  let result = 0;
+  for (let i = 0; i < token.length; i++) {
+    result |= token.charCodeAt(i) ^ storedToken.charCodeAt(i);
+  }
+  return result === 0;
 }
