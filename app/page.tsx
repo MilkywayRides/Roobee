@@ -101,23 +101,59 @@ export default function Home() {
       setLoading(true);
       setError(null);
       try {
+        console.log('Fetching data from APIs...');
+        
         const [postsResponse, projectsResponse] = await Promise.all([
           fetch('/api/posts'),
           fetch('/api/projects/public')
         ]);
 
-        if (!postsResponse.ok || !projectsResponse.ok) {
-          throw new Error('Failed to fetch data');
+        console.log('Posts response status:', postsResponse.status);
+        console.log('Projects response status:', projectsResponse.status);
+
+        // Check if responses are OK
+        if (!postsResponse.ok) {
+          const postsText = await postsResponse.text();
+          console.error('Posts API error:', postsResponse.status, postsText);
+          throw new Error(`Posts API failed: ${postsResponse.status} - ${postsText.substring(0, 100)}`);
+        }
+
+        if (!projectsResponse.ok) {
+          const projectsText = await projectsResponse.text();
+          console.error('Projects API error:', projectsResponse.status, projectsText);
+          throw new Error(`Projects API failed: ${projectsResponse.status} - ${projectsText.substring(0, 100)}`);
+        }
+
+        // Check content type to ensure we're getting JSON
+        const postsContentType = postsResponse.headers.get('content-type');
+        const projectsContentType = projectsResponse.headers.get('content-type');
+
+        if (!postsContentType?.includes('application/json')) {
+          const postsText = await postsResponse.text();
+          console.error('Posts API returned non-JSON:', postsContentType, postsText.substring(0, 200));
+          throw new Error('Posts API returned non-JSON response');
+        }
+
+        if (!projectsContentType?.includes('application/json')) {
+          const projectsText = await projectsResponse.text();
+          console.error('Projects API returned non-JSON:', projectsContentType, projectsText.substring(0, 200));
+          throw new Error('Projects API returned non-JSON response');
         }
 
         const postsData = await postsResponse.json();
         const projectsData = await projectsResponse.json();
         
+        console.log('Successfully fetched data:', { 
+          postsCount: postsData.length, 
+          projectsCount: projectsData.length 
+        });
+        
         setFeaturedPosts(postsData.slice(0, 3));
         setFeaturedProjects(projectsData.slice(0, 3));
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'An unknown error occurred');
+        const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred';
         console.error('Error fetching data:', err);
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -134,8 +170,23 @@ export default function Home() {
       <MainLayout>
         <div className="container mx-auto px-4 py-20 text-center">
           <h2 className="text-2xl font-semibold text-destructive mb-4">Oops! Something went wrong.</h2>
-          <p className="text-muted-foreground mb-6">{error}</p>
-          <Button onClick={() => window.location.reload()}>Try Again</Button>
+          <p className="text-muted-foreground mb-6">
+            We're having trouble loading the latest content. This might be a temporary issue.
+          </p>
+          <div className="space-y-4">
+            <Button onClick={() => window.location.reload()}>Try Again</Button>
+            <div className="text-sm text-muted-foreground">
+              <p>You can still explore our platform:</p>
+              <div className="flex flex-col sm:flex-row gap-4 justify-center mt-4">
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/projects">Browse Projects</Link>
+                </Button>
+                <Button variant="outline" size="sm" asChild>
+                  <Link href="/posts">Read Articles</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       </MainLayout>
     );
@@ -185,32 +236,43 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {loading 
               ? Array.from({ length: 3 }).map((_, i) => <ProjectCardSkeleton key={i} />)
-              : featuredProjects.map((project) => (
-                <Card key={project.id} className="group flex flex-col hover:border-primary/80 transition-all duration-300">
-                  <CardHeader>
-                    <div className="flex justify-between items-start">
-                      <Code className="w-8 h-8 text-primary" />
-                      <Badge variant={project.isFree ? "secondary" : "default"}>
-                        {project.isFree ? "Free" : `${project.coinCost} Coins`}
-                      </Badge>
+              : featuredProjects.length > 0 
+                ? featuredProjects.map((project) => (
+                  <Card key={project.id} className="group flex flex-col hover:border-primary/80 transition-all duration-300">
+                    <CardHeader>
+                      <div className="flex justify-between items-start">
+                        <Code className="w-8 h-8 text-primary" />
+                        <Badge variant={project.isFree ? "secondary" : "default"}>
+                          {project.isFree ? "Free" : `${project.coinCost} Coins`}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                      <CardTitle className="text-xl mb-2">{project.name}</CardTitle>
+                      <CardDescription className="line-clamp-3">
+                        {project.description || "No description available."}
+                      </CardDescription>
+                    </CardContent>
+                    <div className="p-6 pt-0 flex justify-between items-center text-sm text-muted-foreground">
+                      <span>{project.files.length} files</span>
+                      <Button variant="ghost" size="sm" asChild className="group-hover:bg-primary/10">
+                         <Link href={`/projects/${project.id}`}>
+                           View Project <ArrowRight className="ml-2 h-4 w-4" />
+                         </Link>
+                      </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <CardTitle className="text-xl mb-2">{project.name}</CardTitle>
-                    <CardDescription className="line-clamp-3">
-                      {project.description || "No description available."}
-                    </CardDescription>
-                  </CardContent>
-                  <div className="p-6 pt-0 flex justify-between items-center text-sm text-muted-foreground">
-                    <span>{project.files.length} files</span>
-                    <Button variant="ghost" size="sm" asChild className="group-hover:bg-primary/10">
-                       <Link href={`/projects/${project.id}`}>
-                         View Project <ArrowRight className="ml-2 h-4 w-4" />
-                       </Link>
+                  </Card>
+                ))
+                : (
+                  <div className="col-span-full text-center py-12">
+                    <Code className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No projects yet</h3>
+                    <p className="text-muted-foreground mb-4">Check back soon for new projects!</p>
+                    <Button asChild>
+                      <Link href="/projects">Browse All Projects</Link>
                     </Button>
                   </div>
-                </Card>
-              ))
+                )
             }
           </div>
         </div>
@@ -226,41 +288,52 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {loading 
               ? Array.from({ length: 3 }).map((_, i) => <PostCardSkeleton key={i} />)
-              : featuredPosts.map((post) => (
-                <Card key={post.id} className="group flex flex-col hover:border-primary/80 transition-all duration-300">
-                  <CardHeader>
-                    <div className="flex items-center gap-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src={post.author.image} alt={post.author.name} />
-                        <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-semibold">{post.author.name}</p>
-                        <p className="text-sm text-muted-foreground">{formatDate(post.createdAt)}</p>
+              : featuredPosts.length > 0 
+                ? featuredPosts.map((post) => (
+                  <Card key={post.id} className="group flex flex-col hover:border-primary/80 transition-all duration-300">
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-10 w-10">
+                          <AvatarImage src={post.author.image} alt={post.author.name} />
+                          <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <p className="font-semibold">{post.author.name}</p>
+                          <p className="text-sm text-muted-foreground">{formatDate(post.createdAt)}</p>
+                        </div>
                       </div>
+                    </CardHeader>
+                    <CardContent className="flex-grow">
+                      <CardTitle className="text-xl mb-2 line-clamp-2">{post.title}</CardTitle>
+                      <div className="flex flex-wrap gap-2 my-3">
+                        {post.tags.slice(0, 3).map((tag) => (
+                          <Badge key={tag} variant="outline">{tag}</Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                    <div className="p-6 pt-0 flex justify-between items-center text-sm text-muted-foreground">
+                      <div className="flex items-center gap-1">
+                        <Star className="h-4 w-4" />
+                        {getLikeCount(post.likes)}
+                      </div>
+                      <Button variant="ghost" size="sm" asChild className="group-hover:bg-primary/10">
+                        <Link href={`/posts/${post.id}`}>
+                          Read More <ArrowRight className="ml-2 h-4 w-4" />
+                        </Link>
+                      </Button>
                     </div>
-                  </CardHeader>
-                  <CardContent className="flex-grow">
-                    <CardTitle className="text-xl mb-2 line-clamp-2">{post.title}</CardTitle>
-                    <div className="flex flex-wrap gap-2 my-3">
-                      {post.tags.slice(0, 3).map((tag) => (
-                        <Badge key={tag} variant="outline">{tag}</Badge>
-                      ))}
-                    </div>
-                  </CardContent>
-                  <div className="p-6 pt-0 flex justify-between items-center text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Star className="h-4 w-4" />
-                      {getLikeCount(post.likes)}
-                    </div>
-                    <Button variant="ghost" size="sm" asChild className="group-hover:bg-primary/10">
-                      <Link href={`/posts/${post.id}`}>
-                        Read More <ArrowRight className="ml-2 h-4 w-4" />
-                      </Link>
+                  </Card>
+                ))
+                : (
+                  <div className="col-span-full text-center py-12">
+                    <BookOpen className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">No articles yet</h3>
+                    <p className="text-muted-foreground mb-4">Check back soon for new content!</p>
+                    <Button asChild>
+                      <Link href="/posts">Browse All Articles</Link>
                     </Button>
                   </div>
-                </Card>
-              ))
+                )
             }
           </div>
         </div>

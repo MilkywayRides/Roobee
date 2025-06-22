@@ -5,14 +5,35 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
   try {
+    console.log("[POSTS_GET] Fetching posts...");
+    
     const posts = await prisma.post.findMany({
-      include: { author: { select: { id: true, name: true, image: true } }, likes: true },
+      include: { 
+        author: { 
+          select: { id: true, name: true, image: true } 
+        }, 
+        likes: true 
+      },
       orderBy: { createdAt: "desc" }
     });
+    
+    console.log("[POSTS_GET] Successfully fetched", posts.length, "posts");
     return NextResponse.json(posts);
   } catch (error) {
-    console.error("[POSTS_GET]", error);
-    return NextResponse.json({ error: "Failed to fetch posts" }, { status: 500 });
+    console.error("[POSTS_GET] Error:", error);
+    
+    // Check if it's a database connection error
+    if (error instanceof Error && error.message.includes('connect')) {
+      return NextResponse.json(
+        { error: "Database connection failed. Please try again later." }, 
+        { status: 503 }
+      );
+    }
+    
+    return NextResponse.json(
+      { error: "Failed to fetch posts" }, 
+      { status: 500 }
+    );
   }
 }
 
