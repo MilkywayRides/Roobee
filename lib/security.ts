@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from '@/lib/prisma';
-import crypto from 'crypto';
 
 // Rate limiting store (in production, use Redis)
 const rateLimitStore = new Map<string, { count: number; resetTime: number }>();
@@ -108,14 +107,20 @@ export function validatePassword(password: string): { valid: boolean; errors: st
   };
 }
 
-// Generate secure random token
-export function generateSecureToken(length: number = 32): string {
-  return crypto.randomBytes(length).toString('hex');
+// Generate secure random token using Web Crypto API
+export async function generateSecureToken(length: number = 32): Promise<string> {
+  const array = new Uint8Array(length);
+  crypto.getRandomValues(array);
+  return Array.from(array, byte => byte.toString(16).padStart(2, '0')).join('');
 }
 
-// Hash sensitive data for logging
-export function hashSensitiveData(data: string): string {
-  return crypto.createHash('sha256').update(data).digest('hex').substring(0, 8);
+// Hash sensitive data for logging using Web Crypto API
+export async function hashSensitiveData(data: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const dataBuffer = encoder.encode(data);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', dataBuffer);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(byte => byte.toString(16).padStart(2, '0')).join('').substring(0, 8);
 }
 
 // Audit logging

@@ -63,7 +63,7 @@ export async function POST(req: Request) {
     // Additional email validation
     if (!isValidEmail(email)) {
       await logSecurityEvent('REGISTER_INVALID_EMAIL', undefined, {
-        email: hashSensitiveData(email),
+        email: await hashSensitiveData(email),
         ip: clientIP,
         userAgent,
       });
@@ -77,7 +77,7 @@ export async function POST(req: Request) {
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.valid) {
       await logSecurityEvent('REGISTER_WEAK_PASSWORD', undefined, {
-        email: hashSensitiveData(email),
+        email: await hashSensitiveData(email),
         errors: passwordValidation.errors,
         ip: clientIP,
         userAgent,
@@ -91,12 +91,17 @@ export async function POST(req: Request) {
     // Check if user exists and is verified
     const existingUser = await prisma.user.findUnique({
       where: { email },
+      include: {
+        projects: true,
+        posts: true,
+        securityAuditLogs: true,
+      },
     });
 
     if (existingUser?.emailVerified) {
       console.log("[REGISTER] User already exists and is verified");
       await logSecurityEvent('REGISTER_EXISTING_USER', existingUser.id, {
-        email: hashSensitiveData(email),
+        email: await hashSensitiveData(email),
         ip: clientIP,
         userAgent,
       });
@@ -106,14 +111,41 @@ export async function POST(req: Request) {
       );
     }
 
-    // If user exists but is not verified, delete the old record
+    // If user exists but is not verified, delete the old record and related data
     if (existingUser) {
-      console.log("[REGISTER] Deleting unverified user");
-      await prisma.user.delete({
-        where: { email },
+      console.log("[REGISTER] Deleting unverified user and related data");
+      
+      // Delete related records first to avoid foreign key constraints
+      await prisma.$transaction(async (tx) => {
+        // Delete projects
+        if (existingUser.projects.length > 0) {
+          await tx.project.deleteMany({
+            where: { ownerId: existingUser.id },
+          });
+        }
+        
+        // Delete posts
+        if (existingUser.posts.length > 0) {
+          await tx.post.deleteMany({
+            where: { authorId: existingUser.id },
+          });
+        }
+        
+        // Delete security audit logs
+        if (existingUser.securityAuditLogs.length > 0) {
+          await tx.securityAuditLog.deleteMany({
+            where: { userId: existingUser.id },
+          });
+        }
+        
+        // Finally delete the user
+        await tx.user.delete({
+          where: { id: existingUser.id },
+        });
       });
+      
       await logSecurityEvent('REGISTER_DELETED_UNVERIFIED_USER', existingUser.id, {
-        email: hashSensitiveData(email),
+        email: await hashSensitiveData(email),
         ip: clientIP,
         userAgent,
       });
@@ -137,7 +169,7 @@ export async function POST(req: Request) {
 
     // Log successful user creation
     await logSecurityEvent('REGISTER_USER_CREATED', user.id, {
-      email: hashSensitiveData(email),
+      email: await hashSensitiveData(email),
       ip: clientIP,
       userAgent,
     });
@@ -150,7 +182,7 @@ export async function POST(req: Request) {
         where: { email },
       });
       await logSecurityEvent('REGISTER_EMAIL_SERVICE_ERROR', user.id, {
-        email: hashSensitiveData(email),
+        email: await hashSensitiveData(email),
         ip: clientIP,
         userAgent,
       });
@@ -175,7 +207,7 @@ export async function POST(req: Request) {
 
       console.log("[REGISTER] Verification email sent successfully");
       await logSecurityEvent('REGISTER_VERIFICATION_EMAIL_SENT', user.id, {
-        email: hashSensitiveData(email),
+        email: await hashSensitiveData(email),
         ip: clientIP,
         userAgent,
       });
@@ -193,7 +225,7 @@ export async function POST(req: Request) {
       });
       
       await logSecurityEvent('REGISTER_EMAIL_SEND_FAILED', user.id, {
-        email: hashSensitiveData(email),
+        email: await hashSensitiveData(email),
         error: emailError instanceof Error ? emailError.message : 'Unknown error',
         ip: clientIP,
         userAgent,
