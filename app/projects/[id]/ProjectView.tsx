@@ -165,51 +165,6 @@ const getFileTypeInfo = (filename: string): FileTypeInfo => {
   }
 };
 
-function buildFileTree(files: any[]): FileNode[] {
-  const tree: { [key: string]: FileNode } = {};
-  const root: FileNode[] = [];
-
-  files.sort((a, b) => a.fileName.localeCompare(b.fileName));
-
-  files.forEach(file => {
-    const parts = file.fileName.split('/');
-    if (parts.length > 1) {
-      parts.shift();
-    }
-
-    let currentPath = '';
-    let parentNode: FileNode | null = null;
-
-    parts.forEach((part: string, index: number) => {
-      const isLastPart = index === parts.length - 1;
-      currentPath = currentPath ? `${currentPath}/${part}` : part;
-
-      if (!tree[currentPath]) {
-        const node: FileNode = {
-          name: part,
-          path: currentPath,
-          type: isLastPart ? 'file' : 'folder',
-          size: isLastPart ? file.fileSize : 0,
-          children: [],
-          appwriteId: isLastPart ? file.appwriteId : undefined
-        };
-
-        tree[currentPath] = node;
-
-        if (parentNode) {
-          parentNode.children?.push(node);
-        } else {
-          root.push(node);
-        }
-      }
-
-      parentNode = tree[currentPath];
-    });
-  });
-
-  return root;
-}
-
 function FileTreeNode({ node, level = 0, onFileClick }: {
   node: FileNode;
   level?: number;
@@ -265,7 +220,7 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
         <div className="transition-all duration-200">
           {node.children
             .sort((a, b) => {
-              if (a.type === b.type) return a.name.localeCompare(b.name);
+              if (a.type === b.type) return (a.name || '').localeCompare(b.name || '');
               return a.type === 'folder' ? -1 : 1;
             })
             .map((child) => (
@@ -281,13 +236,6 @@ function FileTreeNode({ node, level = 0, onFileClick }: {
     </div>
   );
 }
-
-// Configure Monaco loader
-loader.config({
-  paths: {
-    vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
-  }
-});
 
 const shineAnimation = `
 @keyframes shine {
@@ -311,6 +259,7 @@ export default function ProjectView({ project }: { project: Project }) {
   const [isMobile, setIsMobile] = useState(false);
   const [terminalHeight, setTerminalHeight] = useState(300);
   const [fileContent, setFileContent] = useState<string>("");
+  const [error, setError] = useState<string | null>(null);
   const terminalRef = useRef<HTMLDivElement>(null);
   const terminalInstanceRef = useRef<Terminal | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
@@ -320,10 +269,32 @@ export default function ProjectView({ project }: { project: Project }) {
   const editorRef = useRef<any>(null);
   const monacoRef = useRef<any>(null);
 
+  // Configure Monaco loader
+  useEffect(() => {
+    loader.config({
+      paths: {
+        vs: 'https://cdn.jsdelivr.net/npm/monaco-editor@0.45.0/min/vs'
+      }
+    });
+  }, []);
+
   // Handle initial mount
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    try {
+      setMounted(true);
+      console.log('ProjectView mounted with project:', {
+        id: project.id,
+        name: project.name,
+        description: project.description,
+        owner: project.owner,
+        filesCount: project.files.length,
+        files: project.files
+      });
+    } catch (err) {
+      console.error('Error in ProjectView mount:', err);
+      setError('Failed to load project view');
+    }
+  }, [project]);
 
   // Add the style tag for the animation
   useEffect(() => {
@@ -781,7 +752,7 @@ export default function ProjectView({ project }: { project: Project }) {
     }
   };
 
-  const fileTree = buildFileTree(project.files);
+  const fileTree = project.files || [];
 
   const handleSidebarTabClick = (tab: SidebarTab) => {
     setActiveSidebarTab(tab);
@@ -789,6 +760,30 @@ export default function ProjectView({ project }: { project: Project }) {
 
   // Generate meta description
   const metaDescription = `View and edit ${project.name} - A project by ${project.owner.name || 'Anonymous'}. Explore files, code, and collaborate in real-time.`;
+
+  // Show error if there is one
+  if (error) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <p className="text-red-500">{error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading if not mounted
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+          <p className="text-muted-foreground">Loading project...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

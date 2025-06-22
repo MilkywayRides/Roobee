@@ -12,13 +12,13 @@ export async function GET() {
       // Only show free projects to guests
       projects = await prisma.project.findMany({
         where: { isFree: true },
-        include: { files: { select: { id: true } } },
+        include: { files: { select: { id: true, fileName: true, fileSize: true, appwriteId: true } } },
         orderBy: { createdAt: "desc" },
       });
     } else {
       // Show all projects to signed-in users
       projects = await prisma.project.findMany({
-        include: { files: { select: { id: true } } },
+        include: { files: { select: { id: true, fileName: true, fileSize: true, appwriteId: true } } },
         orderBy: { createdAt: "desc" },
       });
     }
