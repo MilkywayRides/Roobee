@@ -3,7 +3,6 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/config/auth';
 import { prisma } from '@/lib/prisma';
 import { getFilePreview } from '@/lib/appwrite';
-import { ExtendedSession } from '@/types';
 import { Project, ProjectFile } from '@prisma/client';
 
 type ProjectWithFiles = Project & {
@@ -19,11 +18,11 @@ type ProjectWithFiles = Project & {
 
 export async function GET(
     req: Request,
-    { params }: { params: { id: string } }
+    context: { params: any }
 ) {
     try {
-        const session = await getServerSession(authOptions) as ExtendedSession | null;
-        const { id: projectId } = await Promise.resolve(params);
+        const session = await getServerSession(authOptions);
+        const { id: projectId } = context.params;
 
         const project = await prisma.project.findUnique({
             where: { id: projectId },
@@ -68,32 +67,34 @@ export async function GET(
 
 export async function DELETE(
     req: Request,
-    { params }: { params: { id: string } }
+    context: { params: any }
 ) {
     try {
-        const session = await getServerSession(authOptions) as ExtendedSession | null;
-        if (!session?.user?.id) {
+        const session = await getServerSession(authOptions);
+        const userId = (session?.user as any)?.id;
+        const userRole = (session?.user as any)?.role;
+        if (!userId) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
         // Find the project
         const project = await prisma.project.findUnique({
-            where: { id: params.id },
+            where: { id: context.params.id },
         });
         if (!project) {
             return NextResponse.json({ error: 'Project not found' }, { status: 404 });
         }
 
         // Only allow owner or admin to delete
-        const isOwner = project.ownerId === session.user.id;
-        const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(session.user.role!);
+        const isOwner = project.ownerId === userId;
+        const isAdmin = ["ADMIN", "SUPER_ADMIN"].includes(userRole!);
         if (!isOwner && !isAdmin) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
         // Delete the project and its files (cascades in DB)
         await prisma.project.delete({
-            where: { id: params.id },
+            where: { id: context.params.id },
         });
 
         return NextResponse.json({ success: true });

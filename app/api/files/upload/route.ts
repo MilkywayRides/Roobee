@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { authOptions } from '@/config/auth';
 import { prisma } from '@/lib/prisma';
 import { uploadFile } from '@/lib/appwrite';
 
 export async function POST(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user) {
+    const userId = (session?.user as any)?.id;
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -27,7 +28,7 @@ export async function POST(req: NextRequest) {
     const project = await prisma.project.findFirst({
       where: {
         id: projectId,
-        ownerId: session.user.id,
+        ownerId: userId,
       },
     });
 
@@ -45,12 +46,12 @@ export async function POST(req: NextRequest) {
     const fileRecord = await prisma.projectFile.create({
       data: {
         fileName: file.name,
-        fileId: uploadedFile.$id,
+        appwriteId: uploadedFile.$id,
         fileSize: file.size,
         mimeType: file.type,
         isPublic,
         projectId,
-        uploadedById: session.user.id,
+        uploadedById: userId,
       },
     });
 
@@ -62,7 +63,7 @@ export async function POST(req: NextRequest) {
         fileSize: fileRecord.fileSize,
         mimeType: fileRecord.mimeType,
         isPublic: fileRecord.isPublic,
-        fileId: fileRecord.fileId,
+        appwriteId: fileRecord.appwriteId,
       },
     });
   } catch (error) {

@@ -1,15 +1,10 @@
 "use client";
 
-import { Metadata } from "next";
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { VerifyForm } from "@/components/auth/verify-form";
 
-export const metadata: Metadata = {
-  title: "Verify Email",
-  description: "Verify your email address",
-};
-
-export default function VerifyPage() {
+function VerifyPageInner() {
   const searchParams = useSearchParams();
   const email = searchParams.get("email");
 
@@ -44,5 +39,13 @@ export default function VerifyPage() {
         <VerifyForm email={email} />
       </div>
     </div>
+  );
+}
+
+export default function VerifyPage() {
+  return (
+    <Suspense>
+      <VerifyPageInner />
+    </Suspense>
   );
 } 

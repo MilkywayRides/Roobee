@@ -3,12 +3,12 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/config/auth";
 import { prisma } from "@/lib/prisma";
 import { getFilePreview } from "@/lib/appwrite";
-import { ExtendedSession } from "@/types";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
+export async function POST(req: Request, context: { params: any }) {
   try {
-    const session = await getServerSession(authOptions) as ExtendedSession | null;
-    if (!session?.user?.id) {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
@@ -17,8 +17,8 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // Verify project ownership
     const project = await prisma.project.findFirst({
       where: {
-        id: params.id,
-        ownerId: session.user.id
+        id: context.params.id,
+        ownerId: userId
       }
     });
 
@@ -32,14 +32,14 @@ export async function POST(req: Request, { params }: { params: { id: string } })
     // Create file record
     const createdFile = await prisma.projectFile.create({
       data: {
-        projectId: params.id,
+        projectId: context.params.id,
         fileName,
         appwriteId: fileId,
         fileSize,
         mimeType,
         fileUrl,
         isPublic,
-        uploadedById: session.user.id
+        uploadedById: userId
       }
     });
 
@@ -53,14 +53,15 @@ export async function POST(req: Request, { params }: { params: { id: string } })
   }
 }
 
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, context: { params: any }) {
   try {
-    const session = await getServerSession(authOptions) as ExtendedSession | null;
-    if (!session?.user?.id) {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { id } = await Promise.resolve(params);
+    const { id } = context.params;
     const files = await prisma.projectFile.findMany({
       where: {
         projectId: id

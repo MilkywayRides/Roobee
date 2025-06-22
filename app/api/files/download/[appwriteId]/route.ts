@@ -3,22 +3,22 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/config/auth';
 import { prisma } from '@/lib/prisma';
 import { getFileDownload } from '@/lib/appwrite';
-import { ExtendedSession } from '@/types';
 
 export async function GET(
   req: Request,
-  { params }: { params: { appwriteId: string } }
+  context: { params: any }
 ) {
   try {
-    const session = await getServerSession(authOptions) as ExtendedSession | null;
-    if (!session?.user?.id) {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Find the file in the database
     const file = await prisma.projectFile.findUnique({
       where: {
-        appwriteId: params.appwriteId
+        appwriteId: context.params.appwriteId
       },
       include: {
         project: true
@@ -36,7 +36,7 @@ export async function GET(
     }
 
     // Get the file download URL from Appwrite
-    const downloadUrl = getFileDownload(params.appwriteId).toString();
+    const downloadUrl = getFileDownload(context.params.appwriteId).toString();
 
     // Redirect to the download URL
     return NextResponse.redirect(downloadUrl);

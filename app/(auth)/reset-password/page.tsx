@@ -1,13 +1,10 @@
-import { Metadata } from "next";
+"use client";
+
+import { Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { ResetPasswordForm } from "@/components/auth/reset-password-form";
 
-export const metadata: Metadata = {
-  title: "Reset Password",
-  description: "Reset your password",
-};
-
-export default function ResetPasswordPage() {
+function ResetPasswordPageInner() {
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
 
@@ -42,5 +39,13 @@ export default function ResetPasswordPage() {
         <ResetPasswordForm token={token} />
       </div>
     </div>
+  );
+}
+
+export default function ResetPasswordPage() {
+  return (
+    <Suspense>
+      <ResetPasswordPageInner />
+    </Suspense>
   );
 } 

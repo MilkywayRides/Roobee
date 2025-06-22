@@ -1,7 +1,6 @@
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/config/auth";
 import { ROLES } from "@/constants";
-import { ExtendedSession } from "@/types";
 
 export async function getSession() {
   return await getServerSession(authOptions);
@@ -12,12 +11,12 @@ export async function getCurrentUser() {
   return session?.user;
 }
 
-export function isAdmin(session: ExtendedSession | null) {
-  return session?.user?.role === ROLES.ADMIN || session?.user?.role === ROLES.SUPER_ADMIN;
+export function isAdmin(session: any) {
+  return (session?.user as any)?.role === ROLES.ADMIN || (session?.user as any)?.role === ROLES.SUPER_ADMIN;
 }
 
-export function isSuperAdmin(session: ExtendedSession | null) {
-  return session?.user?.role === ROLES.SUPER_ADMIN;
+export function isSuperAdmin(session: any) {
+  return (session?.user as any)?.role === ROLES.SUPER_ADMIN;
 }
 
 export function requireAuth() {

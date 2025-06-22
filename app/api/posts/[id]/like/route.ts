@@ -2,15 +2,14 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/config/auth";
 import { prisma } from "@/lib/prisma";
-import { ExtendedSession } from "@/types";
 
-export async function POST(req: Request, { params }: { params: { id: string } }) {
-  const session = await getServerSession(authOptions) as ExtendedSession | null;
-  const userId = session?.user?.id;
+export async function POST(req: Request, context: { params: any }) {
+  const session = await getServerSession(authOptions);
+  const userId = (session?.user as any)?.id;
   if (!userId) {
     return new NextResponse("Unauthorized", { status: 401 });
   }
-  const { id: postId } = params;
+  const { id: postId } = context.params;
   const { value } = await req.json();
   if (![1, -1].includes(value)) {
     return new NextResponse("Invalid value", { status: 400 });

@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/config/auth';
 import { prisma } from '@/lib/prisma';
 import { getFileDownload } from '@/lib/appwrite';
-import { ExtendedSession } from '@/types';
+// import { ExtendedSession } from '@/types'; // Remove if not needed
 import { ProjectFile, Project } from '@prisma/client';
 
 // Cache file content for 5 minutes
@@ -11,17 +11,16 @@ const CACHE_DURATION = 5 * 60; // 5 minutes in seconds
 
 export async function GET(
   req: Request,
-  context: { params: { appwriteId: string } }
+  context: { params: any }
 ) {
   try {
-    const session = await getServerSession(authOptions) as ExtendedSession | null;
-    if (!session?.user?.id) {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Await params to fix the Next.js warning
-    const params = await Promise.resolve(context.params);
-    const { appwriteId } = params;
+    const { appwriteId } = context.params;
 
     // Find the file in the database and include all needed fields
     const file = await prisma.projectFile.findFirst({
@@ -34,7 +33,7 @@ export async function GET(
     }
 
     // Check access: allow if public or owner
-    const isOwner = file.project.ownerId === session.user.id;
+    const isOwner = file.project.ownerId === userId;
     if (!file.isPublic && !isOwner) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
@@ -87,16 +86,16 @@ export async function GET(
 
 export async function PATCH(
   req: Request,
-  context: { params: { appwriteId: string } }
+  context: { params: any }
 ) {
   try {
-    const session = await getServerSession(authOptions) as ExtendedSession | null;
-    if (!session?.user?.id) {
+    const session = await getServerSession(authOptions);
+    const userId = (session?.user as any)?.id;
+    if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const params = await Promise.resolve(context.params);
-    const { appwriteId } = params;
+    const { appwriteId } = context.params;
     const { content } = await req.json();
 
     // Find the file and check permissions
@@ -109,7 +108,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'File not found' }, { status: 404 });
     }
 
-    const isOwner = file.project.ownerId === session.user.id;
+    const isOwner = file.project.ownerId === userId;
     if (!isOwner) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }

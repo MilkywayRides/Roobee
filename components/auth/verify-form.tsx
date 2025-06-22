@@ -23,7 +23,11 @@ const formSchema = z.object({
   otp: z.string().min(6, "OTP must be 6 digits").max(6, "OTP must be 6 digits"),
 });
 
-export function VerifyForm() {
+interface VerifyFormProps {
+  email: string;
+}
+
+export function VerifyForm({ email }: VerifyFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -37,13 +41,6 @@ export function VerifyForm() {
   async function onSubmit(values: z.infer<typeof formSchema>) {
     try {
       setIsLoading(true);
-      const searchParams = new URLSearchParams(window.location.search);
-      const email = searchParams.get("email");
-
-      if (!email) {
-        toast.error("Email is required");
-        return;
-      }
 
       const response = await fetch("/api/auth/verify", {
         method: "POST",
@@ -87,7 +84,7 @@ export function VerifyForm() {
                   render={({ slots }) => (
                     <InputOTPGroup>
                       {slots.map((slot, index) => (
-                        <InputOTPSlot key={index} {...slot} />
+                        <InputOTPSlot key={index} {...slot} index={index} />
                       ))}
                     </InputOTPGroup>
                   )}

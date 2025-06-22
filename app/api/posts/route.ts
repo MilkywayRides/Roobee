@@ -19,7 +19,8 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    if (!session?.user?.id) {
+    const userId = (session?.user as any)?.id;
+    if (!userId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const { title, description, markdown, tags, feature } = await req.json();
@@ -30,7 +31,7 @@ export async function POST(req: Request) {
         markdown,
         tags,
         feature,
-        authorId: session.user.id,
+        authorId: userId,
       },
       include: { author: { select: { id: true, name: true, image: true } } }
     });

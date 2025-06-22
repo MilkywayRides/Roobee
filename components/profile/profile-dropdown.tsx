@@ -22,7 +22,7 @@ export function ProfileDropdown() {
     return null;
   }
 
-  const isAdmin = session.user.role === "ADMIN" || session.user.role === "SUPER_ADMIN";
+  const isAdmin = (session.user as any).role === "ADMIN" || (session.user as any).role === "SUPER_ADMIN";
 
   return (
     <DropdownMenu>
