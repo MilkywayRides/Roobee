@@ -14,7 +14,11 @@ export default withAuth(
     const token = req.nextauth.token;
     const isAdminRoute = req.nextUrl.pathname.startsWith("/admin");
     const isSuperAdminRoute = req.nextUrl.pathname.startsWith("/super-admin");
-    const isApiRoute = req.nextUrl.pathname.startsWith("/api");
+    const isProtectedApiRoute = req.nextUrl.pathname.startsWith("/api/auth") || 
+                               req.nextUrl.pathname.startsWith("/api/admin") ||
+                               req.nextUrl.pathname.startsWith("/api/user") ||
+                               req.nextUrl.pathname.startsWith("/api/users") ||
+                               req.nextUrl.pathname.startsWith("/api/files");
     
     // Get client IP and user agent
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
@@ -32,8 +36,8 @@ export default withAuth(
       return new NextResponse("Forbidden", { status: 403 });
     }
     
-    // Rate limiting for API routes
-    if (isApiRoute) {
+    // Rate limiting for protected API routes
+    if (isProtectedApiRoute) {
       const rateLimitResult = checkRateLimit(req, token?.sub);
       if (!rateLimitResult.allowed) {
         return new NextResponse("Too Many Requests", { 
@@ -126,8 +130,8 @@ export default withAuth(
     const response = NextResponse.next();
     addSecurityHeaders(response);
     
-    // Add rate limit headers for API routes
-    if (isApiRoute) {
+    // Add rate limit headers for protected API routes
+    if (isProtectedApiRoute) {
       const rateLimitResult = checkRateLimit(req, token?.sub);
       response.headers.set('X-RateLimit-Remaining', rateLimitResult.remaining.toString());
       response.headers.set('X-RateLimit-Reset', new Date(Date.now() + 15 * 60 * 1000).toISOString());
@@ -137,7 +141,19 @@ export default withAuth(
   },
   {
     callbacks: {
-      authorized: ({ token }) => !!token,
+      authorized: ({ token, req }) => {
+        // Allow public access to certain routes
+        const isPublicRoute = req.nextUrl.pathname.startsWith("/api/posts") ||
+                             req.nextUrl.pathname.startsWith("/api/projects/public") ||
+                             req.nextUrl.pathname.startsWith("/api/projects/all");
+        
+        if (isPublicRoute) {
+          return true; // Allow access without authentication
+        }
+        
+        // Require authentication for all other protected routes
+        return !!token;
+      },
     },
   }
 );
@@ -146,7 +162,11 @@ export const config = {
   matcher: [
     "/admin/:path*", 
     "/super-admin/:path*",
-    "/api/:path*",
+    "/api/auth/:path*",
+    "/api/admin/:path*",
+    "/api/user/:path*",
+    "/api/users/:path*",
+    "/api/files/:path*",
     "/dashboard/:path*",
     "/profile/:path*",
     "/projects/:path*",
