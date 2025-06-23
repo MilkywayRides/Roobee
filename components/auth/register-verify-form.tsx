@@ -1,8 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
+import { signIn } from "next-auth/react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,25 +11,46 @@ import { Icons } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { OTPInput } from "@/components/ui/otp-input";
 
-interface RegisterFormProps extends React.HTMLAttributes<HTMLDivElement> {}
+interface RegisterVerifyFormProps extends React.HTMLAttributes<HTMLDivElement> {
+  onVerificationStart?: (email: string) => void;
+  onVerificationEnd?: () => void;
+  isVerifying?: boolean;
+  userEmail?: string;
+}
 
 type FieldErrors = {
   name?: string[];
   email?: string[];
   password?: string[];
+  otp?: string[];
 };
 
-export function RegisterForm({ className, ...props }: RegisterFormProps) {
+export function RegisterVerifyForm({ 
+  className, 
+  onVerificationStart,
+  onVerificationEnd,
+  isVerifying: externalIsVerifying,
+  userEmail: externalUserEmail,
+  ...props 
+}: RegisterVerifyFormProps) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [termsAccepted, setTermsAccepted] = useState<boolean>(false);
+  const [showOTP, setShowOTP] = useState<boolean>(false);
+  const [userEmail, setUserEmail] = useState<string>(externalUserEmail || "");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: ""
+    password: "",
+    otp: ""
   });
+
+  // Use external state if provided, otherwise use internal state
+  const isVerifying = externalIsVerifying !== undefined ? externalIsVerifying : showOTP;
+  const currentUserEmail = externalUserEmail || userEmail;
 
   // Password validation rules
   const passwordRequirements = {
@@ -45,6 +66,8 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
                      formData.password.trim() !== "" && 
                      termsAccepted;
 
+  const isOTPValid = formData.otp.length === 6;
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -54,7 +77,15 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
     setErrors(prev => ({ ...prev, [name]: undefined }));
   };
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+  const handleOTPChange = (value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      otp: value
+    }));
+    setErrors(prev => ({ ...prev, otp: undefined }));
+  };
+
+  async function handleRegistration(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setErrors({});
     
@@ -69,7 +100,11 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
       const response = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password
+        }),
       });
 
       const data = await response.json();
@@ -84,8 +119,10 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
         return;
       }
 
-      toast.success("Registration successful! Please check your email to verify your account.");
-      router.push(`/verify?email=${encodeURIComponent(formData.email)}`);
+      setUserEmail(formData.email);
+      setShowOTP(true);
+      onVerificationStart?.(formData.email);
+      toast.success("Registration successful! Please enter the verification code sent to your email.");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "An unexpected error occurred.");
     } finally {
@@ -93,9 +130,108 @@ export function RegisterForm({ className, ...props }: RegisterFormProps) {
     }
   }
 
+  async function handleVerification(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setErrors({});
+
+    if (!isOTPValid) {
+      toast.error("Please enter the complete 6-digit verification code");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: currentUserEmail,
+          otp: formData.otp,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.errors) {
+          setErrors(data.errors);
+          toast.error(data.message || "Please check the verification code.");
+        } else {
+          toast.error(data.message || "Verification failed");
+        }
+        return;
+      }
+
+      toast.success("Email verified successfully! You can now sign in.");
+      onVerificationEnd?.();
+      router.push("/login");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "An unexpected error occurred.");
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  if (isVerifying) {
+    return (
+      <div className={cn("grid gap-6", className)} {...props}>
+        <div className="flex flex-col space-y-2 text-center">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Verify your email
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Enter the verification code sent to {currentUserEmail}
+          </p>
+        </div>
+        
+        <form onSubmit={handleVerification} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="otp">Verification Code</Label>
+            <OTPInput
+              value={formData.otp}
+              onChange={handleOTPChange}
+              length={6}
+              disabled={isLoading}
+              className="justify-center"
+            />
+            {errors.otp && <p className="text-sm text-red-500">{errors.otp[0]}</p>}
+          </div>
+          
+          <Button 
+            type="submit" 
+            className="w-full" 
+            disabled={isLoading || !isOTPValid}
+          >
+            {isLoading ? (
+              <>
+                <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+                Verifying...
+              </>
+            ) : (
+              "Verify Email"
+            )}
+          </Button>
+        </form>
+
+        <Button
+          variant="outline"
+          onClick={() => {
+            setShowOTP(false);
+            onVerificationEnd?.();
+          }}
+          disabled={isLoading}
+          className="w-full"
+        >
+          Back to Registration
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("grid gap-6", className)} {...props}>
-      <form onSubmit={onSubmit} className="space-y-4">
+      <form onSubmit={handleRegistration} className="space-y-4">
         <div className="space-y-2">
           <Label htmlFor="name">Name</Label>
           <Input

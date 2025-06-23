@@ -213,6 +213,21 @@ export async function POST(req: Request) {
     const clientIP = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
     const userAgent = req.headers.get('user-agent') || 'unknown';
     
+    // Handle Prisma connection errors specifically
+    if (error && typeof error === 'object' && 'code' in error) {
+      if (error.code === 'P1001') {
+        await logSecurityEvent('REGISTER_DATABASE_CONNECTION_ERROR', undefined, {
+          error: 'Database connection failed',
+          ip: clientIP,
+          userAgent,
+        });
+        return NextResponse.json(
+          { message: "Database connection error. Please try again in a moment." },
+          { status: 503 }
+        );
+      }
+    }
+    
     if (error instanceof z.ZodError) {
       await logSecurityEvent('REGISTER_VALIDATION_ERROR', undefined, {
         errors: error.errors,
@@ -220,7 +235,7 @@ export async function POST(req: Request) {
         userAgent,
       });
       return NextResponse.json(
-        { message: "Invalid input data", errors: error.errors },
+        { message: "Invalid input data", errors: error.flatten().fieldErrors },
         { status: 400 }
       );
     }

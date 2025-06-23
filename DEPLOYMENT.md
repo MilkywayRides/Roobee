@@ -7,7 +7,7 @@ Add these environment variables to your Vercel project settings:
 ### Essential Variables (Must Have)
 
 ```bash
-DATABASE_URL=postgresql://roobee_owner:npg_AZrvJ1Kzx9wG@ep-lucky-salad-a1tbla2e-pooler.ap-southeast-1.aws.neon.tech/roobee?sslmode=require
+DATABASE_URL=******
 NEXTAUTH_URL=https://your-domain.vercel.app
 NEXTAUTH_SECRET=bbd839c4d0990f316c6f8b2f71067bcd48b9b63f935c73c4
 NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app

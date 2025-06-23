@@ -16,8 +16,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp";
+import { OTPInput } from "@/components/ui/otp-input";
 
 const formSchema = z.object({
   otp: z.string().min(6, "OTP must be 6 digits").max(6, "OTP must be 6 digits"),
@@ -79,16 +78,12 @@ export function VerifyForm({ email }: VerifyFormProps) {
             <FormItem>
               <FormLabel>Verification Code</FormLabel>
               <FormControl>
-                <InputOTP
-                  maxLength={6}
-                  render={({ slots }) => (
-                    <InputOTPGroup>
-                      {slots.map((slot, index) => (
-                        <InputOTPSlot key={index} {...slot} index={index} />
-                      ))}
-                    </InputOTPGroup>
-                  )}
-                  {...field}
+                <OTPInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  length={6}
+                  disabled={isLoading}
+                  className="justify-center"
                 />
               </FormControl>
               <FormMessage />

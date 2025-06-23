@@ -1,13 +1,13 @@
-import { Metadata } from "next";
-import Link from "next/link";
-import { RegisterForm } from "@/components/auth/register-form";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Register",
-  description: "Create a new account",
-};
+import Link from "next/link";
+import { RegisterVerifyForm } from "@/components/auth/register-verify-form";
+import { useState } from "react";
 
 export default function RegisterPage() {
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [userEmail, setUserEmail] = useState("");
+
   return (
     <div className="container relative h-screen flex-col items-center justify-center grid lg:max-w-none lg:grid-cols-2 lg:px-0">
       <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
@@ -38,54 +38,68 @@ export default function RegisterPage() {
       </div>
       <div className="lg:p-8">
         <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
-          <div className="flex flex-col space-y-2 text-center">
-            <h1 className="text-2xl font-semibold tracking-tight">
-              Create an account
-            </h1>
-            <p className="text-sm text-muted-foreground">
-              Enter your email below to create your account
-            </p>
-          </div>
-          <RegisterForm />
-          <div className="px-8 text-center text-sm text-muted-foreground">
-            <Link
-              href="/login"
-              className="hover:text-brand underline underline-offset-4"
-            >
-              Already have an account? Sign In
-            </Link>
-          </div>
-          <div className="flex items-center justify-center gap-2 mt-4">
-            <Link
-              href="/terminal"
-              className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                className="w-4 h-4"
-              >
-                <rect width="20" height="16" x="2" y="4" rx="2" />
-                <path d="M6 8h.01" />
-                <path d="M10 8h.01" />
-                <path d="M14 8h.01" />
-                <path d="M18 8h.01" />
-                <path d="M8 12h.01" />
-                <path d="M12 12h.01" />
-                <path d="M16 12h.01" />
-                <path d="M7 16h10" />
-              </svg>
-              Open Terminal View
-            </Link>
-            <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
-              New
-            </span>
-          </div>
+          {!isVerifying && (
+            <div className="flex flex-col space-y-2 text-center">
+              <h1 className="text-2xl font-semibold tracking-tight">
+                Create an account
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Enter your email below to create your account
+              </p>
+            </div>
+          )}
+          <RegisterVerifyForm 
+            onVerificationStart={(email) => {
+              setIsVerifying(true);
+              setUserEmail(email);
+            }}
+            onVerificationEnd={() => setIsVerifying(false)}
+            isVerifying={isVerifying}
+            userEmail={userEmail}
+          />
+          {!isVerifying && (
+            <>
+              <div className="px-8 text-center text-sm text-muted-foreground">
+                <Link
+                  href="/login"
+                  className="hover:text-brand underline underline-offset-4"
+                >
+                  Already have an account? Sign In
+                </Link>
+              </div>
+              <div className="flex items-center justify-center gap-2 mt-4">
+                <Link
+                  href="/terminal"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300 transition-colors"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="w-4 h-4"
+                  >
+                    <rect width="20" height="16" x="2" y="4" rx="2" />
+                    <path d="M6 8h.01" />
+                    <path d="M10 8h.01" />
+                    <path d="M14 8h.01" />
+                    <path d="M18 8h.01" />
+                    <path d="M8 12h.01" />
+                    <path d="M12 12h.01" />
+                    <path d="M16 12h.01" />
+                    <path d="M7 16h10" />
+                  </svg>
+                  Open Terminal View
+                </Link>
+                <span className="inline-flex items-center rounded-full bg-blue-100 px-2 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                  New
+                </span>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

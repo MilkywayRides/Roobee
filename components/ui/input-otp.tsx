@@ -9,17 +9,22 @@ import { cn } from "@/lib/utils";
 const InputOTP = React.forwardRef<
   React.ElementRef<typeof OTPInput>,
   React.ComponentPropsWithoutRef<typeof OTPInput>
->(({ className, containerClassName, ...props }, ref) => (
-  <OTPInput
-    ref={ref}
-    containerClassName={cn(
-      "flex items-center gap-2 has-[:disabled]:opacity-50",
-      containerClassName
-    )}
-    className={cn("disabled:cursor-not-allowed disabled:opacity-50", className)}
-    {...props}
-  />
-));
+>(({ className, containerClassName, ...props }, ref) => {
+  // Filter out any non-OTP props that might be passed from react-hook-form
+  const { placeholderChar, ...otpProps } = props as any;
+  
+  return (
+    <OTPInput
+      ref={ref}
+      containerClassName={cn(
+        "flex items-center gap-2 has-[:disabled]:opacity-50",
+        containerClassName
+      )}
+      className={cn("disabled:cursor-not-allowed disabled:opacity-50", className)}
+      {...otpProps}
+    />
+  );
+});
 InputOTP.displayName = "InputOTP";
 
 const InputOTPGroup = React.forwardRef<
@@ -35,6 +40,35 @@ const InputOTPSlot = React.forwardRef<
   React.InputHTMLAttributes<HTMLInputElement> & { index: number }
 >(({ index, className, ...props }, ref) => {
   const inputOTPContext = React.useContext(OTPInputContext);
+  
+  // Filter out any non-DOM props
+  const { placeholderChar, ...inputProps } = props as any;
+  
+  // Safety check to ensure slots array exists and has the required index
+  if (!inputOTPContext?.slots || !inputOTPContext.slots[index]) {
+    return (
+      <div
+        className={cn(
+          "relative h-10 w-10 text-center text-sm",
+          "border-y border-r border-input first:rounded-l-md first:border-l last:rounded-r-md",
+          "focus-within:z-10 focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-background",
+          className
+        )}
+      >
+        <input
+          ref={ref}
+          className={cn(
+            "absolute inset-0 h-full w-full text-center text-sm",
+            "border-0 bg-transparent p-0",
+            "focus:outline-none focus:ring-0",
+            "disabled:cursor-not-allowed disabled:opacity-50"
+          )}
+          {...inputProps}
+        />
+      </div>
+    );
+  }
+
   const { char, hasFakeCaret, isActive } = inputOTPContext.slots[index];
 
   return (
@@ -55,7 +89,7 @@ const InputOTPSlot = React.forwardRef<
           "focus:outline-none focus:ring-0",
           "disabled:cursor-not-allowed disabled:opacity-50"
         )}
-        {...props}
+        {...inputProps}
       />
       {char && (
         <div className="absolute inset-0 flex items-center justify-center">
