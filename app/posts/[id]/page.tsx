@@ -314,10 +314,11 @@ export default function PostDetailPage() {
                 const {node, children, ...rest} = props;
                 const codeChild = Children.toArray(children).find(child => isValidElement(child) && child.type === 'code') as React.ReactElement | undefined;
                 
-                if (codeChild) {
-                    const language = (codeChild.props.className || '').replace('language-', '') || 'text';
-                    const fileName = codeChild.props.node?.data?.meta as string | undefined;
-                    const codeString = codeChild.props.children;
+                if (codeChild && codeChild.props && typeof codeChild.props === 'object') {
+                    const props = codeChild.props as { className?: string; node?: { data?: { meta?: string } }; children?: React.ReactNode };
+                    const language = (props.className || '').replace('language-', '') || 'text';
+                    const fileName = props.node?.data?.meta as string | undefined;
+                    const codeString = props.children;
                     return (
                       <CodeBlock
                         language={language}
@@ -331,11 +332,13 @@ export default function PostDetailPage() {
                 
                 return <pre className="bg-muted border border-border rounded-lg p-4 overflow-x-auto mb-4" {...rest}>{children}</pre>;
               },
-              code: ({inline, className, children, ...props}) => {
+              code: (props) => {
+                const { className, children, ...rest } = props;
+                const inline = (props as any).inline;
                 if (inline) {
-                    return <code {...props} className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground">{children}</code>
+                    return <code {...rest} className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground">{children}</code>
                 }
-                return <code {...props} className={className}>{children}</code>
+                return <code {...rest} className={className}>{children}</code>
               },
               a: ({ href, children }) => (
                 <a 

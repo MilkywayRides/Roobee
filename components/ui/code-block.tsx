@@ -6,6 +6,7 @@ import { Copy, Check, FileCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Prism from "prismjs";
 import "prismjs/plugins/line-numbers/prism-line-numbers.js";
+import "./code-block.css";
 import "prismjs/components/prism-javascript";
 import "prismjs/components/prism-typescript";
 import "prismjs/components/prism-jsx";
