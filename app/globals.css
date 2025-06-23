@@ -1,3 +1,6 @@
+@import "prismjs/themes/prism-tomorrow.css";
+@import "prismjs/plugins/line-numbers/prism-line-numbers.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -89,4 +92,89 @@
 
 .animate-caret-blink {
   animation: caret-blink 1s ease-in-out infinite;
+}
+
+/* Custom Prism.js styles for better integration with shadcn theme */
+pre[class*="language-"] {
+  background: hsl(var(--muted)) !important;
+  border: 1px solid hsl(var(--border)) !important;
+  border-radius: 0.5rem !important;
+  margin: 0 !important;
+  padding: 1rem !important;
+  overflow-x: auto !important;
+}
+
+code[class*="language-"] {
+  color: hsl(var(--foreground)) !important;
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Consolas, "Liberation Mono", Menlo, monospace !important;
+  font-size: 0.875rem !important;
+  line-height: 1.5 !important;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: hsl(var(--muted-foreground)) !important;
+}
+
+.token.punctuation {
+  color: hsl(var(--foreground)) !important;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #ff6b6b !important;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #51cf66 !important;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+  color: #ffd43b !important;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+  color: #74c0fc !important;
+}
+
+.token.function,
+.token.class-name {
+  color: #ffa8a8 !important;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+  color: #ffd8a8 !important;
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold !important;
+}
+
+.token.italic {
+  font-style: italic !important;
+}
+
+.token.entity {
+  cursor: help !important;
 } 
