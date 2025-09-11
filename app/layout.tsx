@@ -9,7 +9,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next"
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Auth System",
+  title: "Blaze Neuro",
   description: "Authentication system with Next.js",
 };
 

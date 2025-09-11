@@ -143,9 +143,7 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         // Allow public access to certain routes
-        const isPublicRoute = req.nextUrl.pathname.startsWith("/api/posts") ||
-                             req.nextUrl.pathname.startsWith("/api/projects/public") ||
-                             req.nextUrl.pathname.startsWith("/api/projects/all");
+        const isPublicRoute = req.nextUrl.pathname.startsWith("/api/posts");
         
         if (isPublicRoute) {
           return true; // Allow access without authentication
@@ -169,7 +167,6 @@ export const config = {
     "/api/files/:path*",
     "/dashboard/:path*",
     "/profile/:path*",
-    "/projects/:path*",
     "/posts/:path*"
   ],
 }; 
