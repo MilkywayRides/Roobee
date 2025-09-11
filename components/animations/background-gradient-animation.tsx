@@ -126,6 +126,7 @@ export const BackgroundGradientAnimation = ({
             `animate-first`,
             `opacity-100`
           )}
+          style={{ animationDuration: '16s', animationDelay: '0s', willChange: 'transform' }}
         ></div>
         <div
           className={cn(
@@ -135,6 +136,7 @@ export const BackgroundGradientAnimation = ({
             `animate-second`,
             `opacity-100`
           )}
+          style={{ animationDuration: '21s', animationDelay: '2s', willChange: 'transform' }}
         ></div>
         <div
           className={cn(
@@ -144,6 +146,7 @@ export const BackgroundGradientAnimation = ({
             `animate-third`,
             `opacity-100`
           )}
+          style={{ animationDuration: '18s', animationDelay: '4s', willChange: 'transform' }}
         ></div>
         <div
           className={cn(
@@ -153,6 +156,7 @@ export const BackgroundGradientAnimation = ({
             `animate-fourth`,
             `opacity-70`
           )}
+          style={{ animationDuration: '23s', animationDelay: '1s', willChange: 'transform' }}
         ></div>
         <div
           className={cn(
@@ -162,6 +166,7 @@ export const BackgroundGradientAnimation = ({
             `animate-fifth`,
             `opacity-100`
           )}
+          style={{ animationDuration: '20s', animationDelay: '3s', willChange: 'transform' }}
         ></div>
 
         {interactive && (

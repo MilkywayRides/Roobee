@@ -130,7 +130,7 @@ export default function Home() {
         <div
           className="relative flex items-center justify-center w-full min-h-[400px] h-[400px] md:min-h-[550px] rounded-[20px] sm:rounded-[30px] overflow-hidden"
         >
-          <BackgroundGradientAnimation className="absolute inset-0 w-full h-full" />
+          <BackgroundGradientAnimation containerClassName="absolute inset-0 w-full h-full" interactive={false} />
           <div className="absolute inset-0 flex flex-col items-center justify-center w-full h-full z-10 space-y-6 px-4">
             <p className="bg-clip-text text-transparent drop-shadow-2xl bg-gradient-to-b from-white/80 to-white/20 
         text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-center max-w-2xl">

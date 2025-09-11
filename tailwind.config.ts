@@ -31,11 +31,41 @@ const config = {
           '0%': { transform: 'translateX(-100%)' },
           '20%, 100%': { transform: 'translateX(100%)' },
         },
+        first: {
+          '0%': { transform: 'translate3d(0, 0, 0) scale(1) rotate(0deg)' },
+          '50%': { transform: 'translate3d(120px, -80px, 0) scale(1.1) rotate(30deg)' },
+          '100%': { transform: 'translate3d(0, 0, 0) scale(1) rotate(0deg)' },
+        },
+        second: {
+          '0%': { transform: 'translate3d(0, 0, 0) scale(1) rotate(0deg)' },
+          '50%': { transform: 'translate3d(-160px, 60px, 0) scale(0.9) rotate(-20deg)' },
+          '100%': { transform: 'translate3d(0, 0, 0) scale(1) rotate(0deg)' },
+        },
+        third: {
+          '0%': { transform: 'translate3d(0, 0, 0) scale(1) rotate(0deg)' },
+          '50%': { transform: 'translate3d(90px, 100px, 0) scale(1.05) rotate(15deg)' },
+          '100%': { transform: 'translate3d(0, 0, 0) scale(1) rotate(0deg)' },
+        },
+        fourth: {
+          '0%': { transform: 'translate3d(0, 0, 0) scale(1) rotate(0deg)' },
+          '50%': { transform: 'translate3d(-100px, -120px, 0) scale(1.1) rotate(25deg)' },
+          '100%': { transform: 'translate3d(0, 0, 0) scale(1) rotate(0deg)' },
+        },
+        fifth: {
+          '0%': { transform: 'translate3d(0, 0, 0) scale(1) rotate(0deg)' },
+          '50%': { transform: 'translate3d(140px, 40px, 0) scale(0.95) rotate(-15deg)' },
+          '100%': { transform: 'translate3d(0, 0, 0) scale(1) rotate(0deg)' },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
         "shine": "shine 3s ease-in-out infinite",
+        first: "first 16s ease-in-out infinite",
+        second: "second 20s ease-in-out infinite",
+        third: "third 18s ease-in-out infinite",
+        fourth: "fourth 22s ease-in-out infinite",
+        fifth: "fifth 19s ease-in-out infinite",
       },
       colors: {
         border: "hsl(var(--border))",
