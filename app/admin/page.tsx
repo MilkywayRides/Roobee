@@ -1,9 +1,12 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
+
 import { useSession } from "next-auth/react";
-import { Users, Activity, FileText, BarChart3, TrendingDown } from "lucide-react";
-import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
+import { Users, Activity, FileText, BarChart3 } from "lucide-react";
+import { SectionCards } from "@/components/section-cards"
+
+import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 
 import {
   Card,
@@ -14,11 +17,26 @@ import {
 } from "@/components/ui/card";
 import {
   ChartConfig,
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
 } from "@/components/ui/chart";
-import { Badge } from "@/components/ui/badge";
+
+// Removed: import { prisma } from "@/lib/prisma";
+
+interface MetricsData {
+  totalPosts: number;
+  newPosts: number;
+  newPostsTrend: 'up' | 'down';
+  newPostsChange: number;
+  totalUsers: number;
+  newUsers: number;
+  newUsersTrend: 'up' | 'down';
+  newUsersChange: number;
+  totalLikes: number;
+  newLikesTrend: 'up' | 'down';
+  newLikesChange: number;
+  totalFollows: number;
+  newFollowsTrend: 'up' | 'down';
+  newFollowsChange: number;
+}
 
 const animationConfig = {
   glowWidth: 300,
@@ -52,171 +70,70 @@ const chartConfig = {
 
 export default function AdminPage() {
   const { data: session } = useSession();
-  const [xAxis, setXAxis] = React.useState(null);
+  const [xAxis, setXAxis] = React.useState<number | null>(null);
+  const [metrics, setMetrics] = useState<MetricsData | null>(null);
+
+  useEffect(() => {
+    async function fetchMetricsData() {
+      try {
+        const response = await fetch('/api/admin/metrics');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data: MetricsData = await response.json();
+        setMetrics(data);
+      } catch (error) {
+        console.error("Error fetching blog metrics:", error);
+        setMetrics({
+          totalPosts: 0,
+          newPosts: 0,
+          newPostsTrend: 'down',
+          newPostsChange: 0,
+          totalUsers: 0,
+          newUsers: 0,
+          newUsersTrend: 'down',
+          newUsersChange: 0,
+          totalLikes: 0,
+          newLikesTrend: 'down',
+          newLikesChange: 0,
+          totalFollows: 0,
+          newFollowsTrend: 'down',
+          newFollowsChange: 0,
+        });
+      }
+    }
+
+    fetchMetricsData();
+  }, []);
   
   return (
-    <div className="bg-card rounded-xl shadow-lg p-6 border">
+    <div className="bg-card rounded-xl shadow-lg">
       <h1 className="text-2xl font-bold mb-6 text-foreground">Welcome, {session?.user?.name || "Admin"}</h1>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,234</div>
-            <p className="text-xs text-muted-foreground">+20.1% from last month</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-            <Activity className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">573</div>
-            <p className="text-xs text-muted-foreground">+201 since last hour</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Reports</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 new reports</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Analytics</CardTitle>
-            <BarChart3 className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">86%</div>
-            <p className="text-xs text-muted-foreground">+4% from last month</p>
-          </CardContent>
-        </Card>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {metrics && (
+          <div className="lg:col-span-4">
+            <SectionCards
+              totalPosts={metrics.totalPosts}
+              newPosts={metrics.newPosts}
+              newPostsTrend={metrics.newPostsTrend}
+              newPostsChange={metrics.newPostsChange}
+              totalUsers={metrics.totalUsers}
+              newUsers={metrics.newUsers}
+              newUsersTrend={metrics.newUsersTrend}
+              newUsersChange={metrics.newUsersChange}
+              totalLikes={metrics.totalLikes}
+              newLikesTrend={metrics.newLikesTrend}
+              newLikesChange={metrics.newLikesChange}
+              totalFollows={metrics.totalFollows}
+              newFollowsTrend={metrics.newFollowsTrend}
+              newFollowsChange={metrics.newFollowsChange}
+            />
+          </div>
+        )}
+        <div className="lg:col-span-4 px-4 lg:px-6">
+          <ChartAreaInteractive />
+        </div>
       </div>
-      
-      <Card className="col-span-full">
-        <CardHeader>
-          <CardTitle>
-            Highlighted Area Chart
-            <Badge
-              variant="outline"
-              className="text-red-500 bg-red-500/10 border-none ml-2"
-            >
-              <TrendingDown className="h-4 w-4" />
-              <span>-5.2%</span>
-            </Badge>
-          </CardTitle>
-          <CardDescription>
-            Showing total visitors for the last 6 months
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={chartConfig}>
-            <AreaChart
-              accessibilityLayer
-              data={chartData}
-              onMouseMove={(e) => setXAxis(e?.chartX || null)}
-              onMouseLeave={() => setXAxis(null)}
-            >
-              <CartesianGrid vertical={false} strokeDasharray="3 3" />
-              <XAxis
-                dataKey="month"
-                tickLine={false}
-                axisLine={false}
-                tickMargin={8}
-                tickFormatter={(value) => value.slice(0, 3)}
-              />
-              <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
-              <defs>
-                <linearGradient
-                  id="animated-highlighted-mask-grad"
-                  x1="0"
-                  y1="0"
-                  x2="1"
-                  y2="0"
-                >
-                  <stop offset="0%" stopColor="transparent" />
-                  <stop offset="50%" stopColor="white" />
-                  <stop offset="100%" stopColor="transparent" />
-                </linearGradient>
-                <linearGradient
-                  id="animated-highlighted-grad-desktop"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="5%"
-                    stopColor="var(--color-desktop)"
-                    stopOpacity={0.4}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--color-desktop)"
-                    stopOpacity={0}
-                  />
-                </linearGradient>
-                <linearGradient
-                  id="animated-highlighted-grad-mobile"
-                  x1="0"
-                  y1="0"
-                  x2="0"
-                  y2="1"
-                >
-                  <stop
-                    offset="5%"
-                    stopColor="var(--color-mobile)"
-                    stopOpacity={0.4}
-                  />
-                  <stop
-                    offset="95%"
-                    stopColor="var(--color-mobile)"
-                    stopOpacity={0}
-                  />
-                </linearGradient>
-                {xAxis && (
-                  <mask id="animated-highlighted-mask">
-                    <rect
-                      x={xAxis - animationConfig.glowWidth / 2}
-                      y={0}
-                      width={animationConfig.glowWidth}
-                      height="100%"
-                      fill="url(#animated-highlighted-mask-grad)"
-                    />
-                  </mask>
-                )}
-              </defs>
-              <Area
-                dataKey="mobile"
-                type="natural"
-                fill="url(#animated-highlighted-grad-mobile)"
-                fillOpacity={0.4}
-                stroke="var(--color-mobile)"
-                stackId="a"
-                strokeWidth={0.8}
-                mask={xAxis ? "url(#animated-highlighted-mask)" : undefined}
-              />
-              <Area
-                dataKey="desktop"
-                type="natural"
-                fill="url(#animated-highlighted-grad-desktop)"
-                fillOpacity={0.4}
-                stroke="var(--color-desktop)"
-                stackId="a"
-                strokeWidth={0.8}
-                mask={xAxis ? "url(#animated-highlighted-mask)" : undefined}
-              />
-            </AreaChart>
-          </ChartContainer>
-        </CardContent>
-      </Card>
     </div>
   );
-}
+} 
