@@ -17,6 +17,24 @@ interface FloatingObject {
   rotationSpeed: { x: number; y: number; z: number };
 }
 
+interface BackgroundGradientAnimationProps {
+  gradientBackgroundStart?: string;
+  gradientBackgroundEnd?: string;
+  firstColor?: string;
+  secondColor?: string;
+  thirdColor?: string;
+  fourthColor?: string;
+  fifthColor?: string;
+  pointerColor?: string;
+  size?: string;
+  blendingValue?: string;
+  children?: React.ReactNode;
+  className?: string;
+  interactive?: boolean;
+  isAnimationPaused?: boolean;
+  containerClassName?: string;
+}
+
 export const BackgroundGradientAnimation = ({
   gradientBackgroundStart = "rgb(108, 0, 162)",
   gradientBackgroundEnd = "rgb(0, 17, 82)",
@@ -31,25 +49,11 @@ export const BackgroundGradientAnimation = ({
   children,
   className,
   interactive = true,
+  isAnimationPaused = false,
   containerClassName,
-}: {
-  gradientBackgroundStart?: string;
-  gradientBackgroundEnd?: string;
-  firstColor?: string;
-  secondColor?: string;
-  thirdColor?: string;
-  fourthColor?: string;
-  fifthColor?: string;
-  pointerColor?: string;
-  size?: string;
-  blendingValue?: string;
-  children?: React.ReactNode;
-  className?: string;
-  interactive?: boolean;
-  containerClassName?: string;
-}) => {
+}: BackgroundGradientAnimationProps) => {
   const interactiveRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number>();
+  const animationRef = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
   const [curX, setCurX] = useState(0);
@@ -338,6 +342,7 @@ export const BackgroundGradientAnimation = ({
             `animate-first`,
             `opacity-100`
           )}
+          style={{ animationPlayState: isAnimationPaused ? 'paused' : 'running' }}
         ></div>
         <div
           className={cn(
@@ -347,6 +352,7 @@ export const BackgroundGradientAnimation = ({
             `animate-second`,
             `opacity-100`
           )}
+          style={{ animationPlayState: isAnimationPaused ? 'paused' : 'running' }}
         ></div>
         <div
           className={cn(
@@ -356,6 +362,7 @@ export const BackgroundGradientAnimation = ({
             `animate-third`,
             `opacity-100`
           )}
+          style={{ animationPlayState: isAnimationPaused ? 'paused' : 'running' }}
         ></div>
         <div
           className={cn(
@@ -365,6 +372,7 @@ export const BackgroundGradientAnimation = ({
             `animate-fourth`,
             `opacity-70`
           )}
+          style={{ animationPlayState: isAnimationPaused ? 'paused' : 'running' }}
         ></div>
         <div
           className={cn(
@@ -374,6 +382,7 @@ export const BackgroundGradientAnimation = ({
             `animate-fifth`,
             `opacity-100`
           )}
+          style={{ animationPlayState: isAnimationPaused ? 'paused' : 'running' }}
         ></div>
 
         {interactive && (

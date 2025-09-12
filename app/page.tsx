@@ -12,7 +12,9 @@ import {
   ArrowRight,
   Code,
   Star,
-  BookOpen
+  BookOpen,
+  Play,
+  Pause
 } from "lucide-react";
 import Link from "next/link";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
@@ -63,6 +65,7 @@ export default function Home() {
   const [featuredPosts, setFeaturedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAnimationPaused, setIsAnimationPaused] = useState(false);
 
   useEffect(() => {
     const fetchData = async (retryCount = 0) => {
@@ -130,7 +133,11 @@ export default function Home() {
         <div
           className="relative flex items-center justify-center w-full min-h-[400px] h-[400px] md:min-h-[550px] rounded-[20px] sm:rounded-[30px] overflow-hidden"
         >
-          <BackgroundGradientAnimation containerClassName="absolute inset-0 w-full h-full" interactive={false} />
+          <BackgroundGradientAnimation 
+            containerClassName="absolute inset-0 w-full h-full" 
+            interactive={false} 
+            isAnimationPaused={isAnimationPaused} 
+          />
           <div className="absolute inset-0 flex flex-col items-center justify-center w-full h-full z-10 space-y-6 px-4">
             <p className="bg-clip-text text-transparent drop-shadow-2xl bg-gradient-to-b from-white/80 to-white/20 
         text-2xl sm:text-4xl md:text-6xl lg:text-7xl font-bold text-center max-w-2xl">
@@ -144,6 +151,14 @@ export default function Home() {
               />
             </div>
           </div>
+          <Button 
+            variant="outline" 
+            size="icon" 
+            className="absolute bottom-4 right-4 z-20 bg-white/10 rounded-full backdrop-blur-sm hover:bg-white/20"
+            onClick={() => setIsAnimationPaused(!isAnimationPaused)}
+          >
+            {isAnimationPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+          </Button>
         </div>
       </section>
 
