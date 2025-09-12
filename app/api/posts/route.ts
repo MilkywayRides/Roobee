@@ -3,10 +3,17 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/config/auth";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    console.log("[POSTS_GET] Fetching posts...");
-    
+    const { searchParams } = new URL(req.url);
+    const query = searchParams.get("q");
+
+    if (query) {
+      console.log(`[POSTS_GET] Searching posts with query: "${query}"`);
+    } else {
+      console.log("[POSTS_GET] Fetching all posts...");
+    }
+
     // Test database connection first
     try {
       await prisma.$connect();
@@ -14,44 +21,63 @@ export async function GET() {
     } catch (dbError) {
       console.error("[POSTS_GET] Database connection failed:", dbError);
       return NextResponse.json(
-        { error: "Database connection failed" }, 
+        { error: "Database connection failed" },
         { status: 503 }
       );
     }
-    
+
     const posts = await prisma.post.findMany({
-      include: { 
-        author: { 
-          select: { id: true, name: true, image: true } 
-        }, 
-        likes: true 
+      where: query
+        ? {
+            OR: [
+              {
+                title: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+              {
+                description: {
+                  contains: query,
+                  mode: "insensitive",
+                },
+              },
+            ],
+          }
+        : {},
+      include: {
+        author: {
+          select: { id: true, name: true, image: true },
+        },
+        likes: true,
       },
-      orderBy: { createdAt: "desc" }
+      orderBy: { createdAt: "desc" },
     });
-    
+
     console.log("[POSTS_GET] Successfully fetched", posts.length, "posts");
     return NextResponse.json(posts);
   } catch (error) {
     console.error("[POSTS_GET] Error:", error);
-    
-    // Check if it's a database connection error
-    if (error instanceof Error && error.message.includes('connect')) {
+
+    if (error instanceof Error && error.message.includes("connect")) {
       return NextResponse.json(
-        { error: "Database connection failed. Please try again later." }, 
+        { error: "Database connection failed. Please try again later." },
         { status: 503 }
       );
     }
-    
-    // Check if it's a Prisma error
-    if (error instanceof Error && error.message.includes('prisma')) {
+
+    if (error instanceof Error && error.message.includes("prisma")) {
       return NextResponse.json(
-        { error: "Database query failed. Please try again later." }, 
+        { error: "Database query failed. Please try again later." },
         { status: 500 }
       );
     }
-    
+
     return NextResponse.json(
-      { error: "Failed to fetch posts", details: error instanceof Error ? error.message : 'Unknown error' }, 
+      {
+        error: "Failed to fetch posts",
+        details: error instanceof Error ? error.message : "Unknown error",
+      },
       { status: 500 }
     );
   }
