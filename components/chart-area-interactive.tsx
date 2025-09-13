@@ -27,25 +27,25 @@ import { Skeleton } from '@/components/ui/skeleton'
 const chartConfig = {
   posts: {
     label: 'Posts',
-    color: 'var(--chart-1)',
+    color: 'hsl(var(--chart-1))',
   },
   users: {
     label: 'Users',
-    color: 'var(--chart-2)',
+    color: 'hsl(var(--chart-2))',
   },
   likes: {
     label: 'Likes',
-    color: 'var(--chart-3)',
+    color: 'hsl(var(--chart-3))',
   },
   follows: {
     label: 'Follows',
-    color: 'var(--chart-4)',
+    color: 'hsl(var(--chart-4))',
   },
-} satisfies ChartConfig
-
-const animationConfig = {
-  glowWidth: 300,
-}
+  shares: {
+    label: 'Shares',
+    color: 'hsl(var(--chart-5))',
+  },
+} satisfies ChartConfig;
 
 interface ChartData {
   month: string
@@ -59,14 +59,10 @@ export function ChartAreaInteractive() {
   const [chartData, setChartData] = useState<ChartData[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [xAxis, setXAxis] = React.useState<number | null>(null)
 
   useEffect(() => {
     async function fetchData() {
       try {
-        // You need to create this API endpoint.
-        // It should return data in the format of:
-        // [{ month: "April", posts: 5, ... }, { month: "May", ... }]
         const response = await fetch('/api/admin/metrics/chart')
         if (!response.ok) {
           throw new Error('Failed to fetch chart data.')
@@ -74,11 +70,7 @@ export function ChartAreaInteractive() {
         const data = await response.json()
         setChartData(data)
       } catch (e) {
-        if (e instanceof Error) {
-          setError(e.message)
-        } else {
-          setError('An unknown error occurred.')
-        }
+        setError(e instanceof Error ? e.message : 'An unknown error occurred.')
       } finally {
         setIsLoading(false)
       }
@@ -88,13 +80,13 @@ export function ChartAreaInteractive() {
 
   if (isLoading) {
     return (
-      <Card>
+      <Card className="p-4 shadow-sm">
         <CardHeader>
-          <Skeleton className="h-8 w-48" />
-          <Skeleton className="h-4 w-full mt-2" />
+          <Skeleton className="h-8 w-40 rounded-md" />
+          <Skeleton className="h-4 w-3/4 mt-2 rounded-md" />
         </CardHeader>
         <CardContent>
-          <Skeleton className="aspect-auto h-[250px] w-full" />
+          <Skeleton className="h-[250px] w-full rounded-lg" />
         </CardContent>
       </Card>
     )
@@ -102,9 +94,9 @@ export function ChartAreaInteractive() {
 
   if (error) {
     return (
-      <Card>
+      <Card className="p-4 shadow-sm border-red-300">
         <CardHeader>
-          <CardTitle>Error</CardTitle>
+          <CardTitle className="text-red-500">Error</CardTitle>
           <CardDescription>{error}</CardDescription>
         </CardHeader>
       </Card>
@@ -113,7 +105,7 @@ export function ChartAreaInteractive() {
 
   if (!chartData || chartData.length < 2) {
     return (
-      <Card>
+      <Card className="p-4 shadow-sm">
         <CardHeader>
           <CardTitle>Not Enough Data</CardTitle>
           <CardDescription>
@@ -124,7 +116,7 @@ export function ChartAreaInteractive() {
     )
   }
 
-  // Calculate trend based on the last two months
+  // Calculate growth trend
   const latestMonth = chartData[chartData.length - 1]
   const previousMonth = chartData[chartData.length - 2]
   const totalLatest = Object.values(latestMonth).reduce(
@@ -141,29 +133,32 @@ export function ChartAreaInteractive() {
       : ((totalLatest - totalPrevious) / totalPrevious) * 100
 
   return (
-    <Card>
+    <Card className="p-4 shadow-sm">
       <CardHeader>
-        <CardTitle>
-          Monthly Platform Growth
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg font-semibold tracking-tight">
+            Monthly Platform Growth
+          </CardTitle>
           <Badge
             variant="outline"
-            className={`${trend > 0 ? 'text-green-500 bg-green-500/10' : 'text-red-500 bg-red-500/10'} border-none ml-2`}
+            className={`ml-2 px-2 py-1 text-sm font-medium rounded-md border-none ${
+              trend > 0
+                ? 'text-green-600 bg-green-100'
+                : 'text-red-600 bg-red-100'
+            }`}
           >
-            {trend > 0 ? '▲' : '▼'}
-            <span>{trend.toFixed(1)}%</span>
+            {trend > 0 ? '▲' : '▼'} {trend.toFixed(1)}%
           </Badge>
-        </CardTitle>
-        <CardDescription>
-          Showing total posts, users, likes and follows for the last 6 months
+        </div>
+        <CardDescription className="text-muted-foreground text-sm">
+          Showing posts, users, likes & follows for the last 6 months
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig}>
-          <AreaChart
-            accessibilityLayer
+        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+          <AreaChart 
             data={chartData}
-            onMouseMove={(e) => setXAxis(e.chartX as number)}
-            onMouseLeave={() => setXAxis(null)}
+            margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
           >
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
@@ -172,146 +167,58 @@ export function ChartAreaInteractive() {
               axisLine={false}
               tickMargin={8}
               tickFormatter={(value) => value.slice(0, 3)}
+              style={{ fontSize: '12px', fill: 'hsl(var(--muted-foreground))' }}
             />
-            <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+            <ChartTooltip 
+              content={<ChartTooltipContent />}
+              cursor={{ 
+                stroke: 'hsl(var(--border))', 
+                strokeWidth: 1,
+                strokeDasharray: '5,5'
+              }}
+              wrapperStyle={{
+                outline: 'none'
+              }}
+              allowEscapeViewBox={{ x: false, y: true }}
+              position={{ x: undefined, y: undefined }}
+            />
+
             <defs>
-              <linearGradient
-                id="animated-highlighted-mask-grad"
-                x1="0"
-                y1="0"
-                x2="1"
-                y2="0"
-              >
-                <stop offset="0%" stopColor="transparent" />
-                <stop offset="50%" stopColor="white" />
-                <stop offset="100%" stopColor="transparent" />
-              </linearGradient>
-
-              <linearGradient
-                id="animated-highlighted-grad-posts"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="5%"
-                  stopColor="var(--color-posts)"
-                  stopOpacity={0.4}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--color-posts)"
-                  stopOpacity={0}
-                />
-              </linearGradient>
-              <linearGradient
-                id="animated-highlighted-grad-users"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="5%"
-                  stopColor="var(--color-users)"
-                  stopOpacity={0.4}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--color-users)"
-                  stopOpacity={0}
-                />
-              </linearGradient>
-              <linearGradient
-                id="animated-highlighted-grad-likes"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="5%"
-                  stopColor="var(--color-likes)"
-                  stopOpacity={0.4}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--color-likes)"
-                  stopOpacity={0}
-                />
-              </linearGradient>
-              <linearGradient
-                id="animated-highlighted-grad-follows"
-                x1="0"
-                y1="0"
-                x2="0"
-                y2="1"
-              >
-                <stop
-                  offset="5%"
-                  stopColor="var(--color-follows)"
-                  stopOpacity={0.4}
-                />
-                <stop
-                  offset="95%"
-                  stopColor="var(--color-follows)"
-                  stopOpacity={0}
-                />
-              </linearGradient>
-
-              {xAxis && (
-                <mask id="animated-highlighted-mask">
-                  <rect
-                    x={xAxis - animationConfig.glowWidth / 2}
-                    y={0}
-                    width={animationConfig.glowWidth}
-                    height="100%"
-                    fill="url(#animated-highlighted-mask-grad)"
+              {['posts', 'users', 'likes', 'follows'].map((key) => (
+                <linearGradient
+                  key={key}
+                  id={`grad-${key}`}
+                  x1="0"
+                  y1="0"
+                  x2="0"
+                  y2="1"
+                >
+                  <stop
+                    offset="5%"
+                    stopColor={`var(--color-${key})`}
+                    stopOpacity={0.4}
                   />
-                </mask>
-              )}
+                  <stop
+                    offset="95%"
+                    stopColor={`var(--color-${key})`}
+                    stopOpacity={0}
+                  />
+                </linearGradient>
+              ))}
             </defs>
-            <Area
-              dataKey="posts"
-              type="natural"
-              fill={"url(#animated-highlighted-grad-posts)"}
-              fillOpacity={0.4}
-              stroke="var(--color-posts)"
-              stackId="a"
-              strokeWidth={0.8}
-              mask="url(#animated-highlighted-mask)"
-            />
-            <Area
-              dataKey="users"
-              type="natural"
-              fill={"url(#animated-highlighted-grad-users)"}
-              fillOpacity={0.4}
-              stroke="var(--color-users)"
-              stackId="a"
-              strokeWidth={0.8}
-              mask="url(#animated-highlighted-mask)"
-            />
-            <Area
-              dataKey="likes"
-              type="natural"
-              fill={"url(#animated-highlighted-grad-likes)"}
-              fillOpacity={0.4}
-              stroke="var(--color-likes)"
-              stackId="a"
-              strokeWidth={0.8}
-              mask="url(#animated-highlighted-mask)"
-            />
-            <Area
-              dataKey="follows"
-              type="natural"
-              fill={"url(#animated-highlighted-grad-follows)"}
-              fillOpacity={0.4}
-              stroke="var(--color-follows)"
-              stackId="a"
-              strokeWidth={0.8}
-              mask="url(#animated-highlighted-mask)"
-            />
+
+            {['posts', 'users', 'likes', 'follows'].map((key) => (
+              <Area
+                key={key}
+                dataKey={key}
+                type="natural"
+                fill={`url(#grad-${key})`}
+                fillOpacity={0.4}
+                stroke={`var(--color-${key})`}
+                stackId="a"
+                strokeWidth={1}
+              />
+            ))}
           </AreaChart>
         </ChartContainer>
       </CardContent>

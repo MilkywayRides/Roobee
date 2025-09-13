@@ -176,8 +176,3 @@ export function SectionCards({
     </div>
   )
 }
-
-// Usage example:
-// <SectionCards isLoading={true} {...otherProps} />
-// or 
-// <SectionCards isLoading={isDataFetching} {...otherProps} />
