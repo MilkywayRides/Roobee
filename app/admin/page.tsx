@@ -72,10 +72,12 @@ export default function AdminPage() {
   const { data: session } = useSession();
   const [xAxis, setXAxis] = React.useState<number | null>(null);
   const [metrics, setMetrics] = useState<MetricsData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     async function fetchMetricsData() {
       try {
+        setIsLoading(true);
         const response = await fetch('/api/admin/metrics');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -100,6 +102,8 @@ export default function AdminPage() {
           newFollowsTrend: 'down',
           newFollowsChange: 0,
         });
+      } finally {
+        setIsLoading(false);
       }
     }
 
@@ -110,30 +114,29 @@ export default function AdminPage() {
     <div className="bg-card rounded-xl shadow-lg">
       <h1 className="text-2xl font-bold mb-6 text-foreground">Welcome, {session?.user?.name || "Admin"}</h1>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        {metrics && (
-          <div className="lg:col-span-4">
-            <SectionCards
-              totalPosts={metrics.totalPosts}
-              newPosts={metrics.newPosts}
-              newPostsTrend={metrics.newPostsTrend}
-              newPostsChange={metrics.newPostsChange}
-              totalUsers={metrics.totalUsers}
-              newUsers={metrics.newUsers}
-              newUsersTrend={metrics.newUsersTrend}
-              newUsersChange={metrics.newUsersChange}
-              totalLikes={metrics.totalLikes}
-              newLikesTrend={metrics.newLikesTrend}
-              newLikesChange={metrics.newLikesChange}
-              totalFollows={metrics.totalFollows}
-              newFollowsTrend={metrics.newFollowsTrend}
-              newFollowsChange={metrics.newFollowsChange}
-            />
-          </div>
-        )}
+        <div className="lg:col-span-4">
+          <SectionCards
+            isLoading={isLoading}
+            totalPosts={metrics?.totalPosts || 0}
+            newPosts={metrics?.newPosts || 0}
+            newPostsTrend={metrics?.newPostsTrend || 'down'}
+            newPostsChange={metrics?.newPostsChange || 0}
+            totalUsers={metrics?.totalUsers || 0}
+            newUsers={metrics?.newUsers || 0}
+            newUsersTrend={metrics?.newUsersTrend || 'down'}
+            newUsersChange={metrics?.newUsersChange || 0}
+            totalLikes={metrics?.totalLikes || 0}
+            newLikesTrend={metrics?.newLikesTrend || 'down'}
+            newLikesChange={metrics?.newLikesChange || 0}
+            totalFollows={metrics?.totalFollows || 0}
+            newFollowsTrend={metrics?.newFollowsTrend || 'down'}
+            newFollowsChange={metrics?.newFollowsChange || 0}
+          />
+        </div>
         <div className="lg:col-span-4 px-4 lg:px-6">
           <ChartAreaInteractive />
         </div>
       </div>
     </div>
   );
-} 
+}
