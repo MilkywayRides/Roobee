@@ -6,6 +6,13 @@ import { Avatar } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { MoreHorizontal } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface Post {
   id: string;
@@ -34,6 +41,26 @@ export default function AdminPostsPage() {
       .catch(() => setError("Failed to load posts"))
       .finally(() => setLoading(false));
   }, []);
+
+  const handleDelete = async (postId: string) => {
+    if (!confirm("Are you sure you want to delete this post?")) return;
+
+    try {
+      const res = await fetch(`/api/posts/${postId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to delete post");
+      }
+
+      setPosts(posts.filter((p) => p.id !== postId));
+    } catch (err: any) {
+      setError(err.message || "Failed to delete post");
+    }
+  };
+
 
   return (
     <div className="max-w-2xl mx-auto py-8 px-2 md:px-0">
@@ -77,12 +104,28 @@ export default function AdminPostsPage() {
                     <span>{post.author?.name?.[0] || "U"}</span>
                   )}
                 </Avatar>
-                <div>
+                <div className="flex-1">
                   <CardTitle className="text-lg font-semibold mb-1">{post.title}</CardTitle>
                   <div className="text-xs text-muted-foreground">
                     {post.author?.name || "Unknown"} &middot; {new Date(post.createdAt).toLocaleDateString()}
                   </div>
                 </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="h-8 w-8 p-0">
+                      <span className="sr-only">Open menu</span>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild>
+                      <Link href={`/admin/posts/edit/${post.id}`}>Edit</Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleDelete(post.id)} className="text-red-600">
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </CardHeader>
               <CardContent>
                 <div className="text-sm text-muted-foreground whitespace-pre-line">
