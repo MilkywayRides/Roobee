@@ -34,7 +34,9 @@ function CardSkeleton() {
     <Card className="@container/card">
       <CardHeader>
         <CardDescription>
+          <div className="text-sm text-muted-foreground">
           <Skeleton className="h-4 w-20" />
+        </div>
         </CardDescription>
         <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
           <Skeleton className="h-8 w-24 @[250px]/card:h-9" />
