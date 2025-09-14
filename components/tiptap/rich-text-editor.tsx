@@ -10,9 +10,10 @@ import Link from "@tiptap/extension-link";
 import Subscript from "@tiptap/extension-subscript";
 import Superscript from "@tiptap/extension-superscript";
 import TextAlign from "@tiptap/extension-text-align";
-import TextStyle from "@tiptap/extension-text-style";
+import { TextStyle } from "@tiptap/extension-text-style";
 import Typography from "@tiptap/extension-typography";
 import Underline from "@tiptap/extension-underline";
+import BubbleMenu from "@tiptap/extension-bubble-menu";
 import { EditorContent, type Extension, useEditor } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import { TipTapFloatingMenu } from "@/components/tiptap/extensions/floating-menu";
@@ -70,6 +71,9 @@ const extensions = [
   ImagePlaceholder,
   SearchAndReplace,
   Typography,
+  BubbleMenu.configure({
+    pluginKey: "bubbleMenu",
+  }),
 ];
 
 export function RichTextEditorDemo({ className }: { className?: string }) {

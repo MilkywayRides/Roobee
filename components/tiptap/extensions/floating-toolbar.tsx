@@ -1,6 +1,7 @@
 "use client";
 
-import { BubbleMenu, type Editor } from "@tiptap/react";
+import { BubbleMenu } from "@tiptap/extension-bubble-menu";
+import { type Editor } from "@tiptap/react";
 import { BoldToolbar } from "../toolbars/bold";
 import { ItalicToolbar } from "../toolbars/italic";
 import { UnderlineToolbar } from "../toolbars/underline";

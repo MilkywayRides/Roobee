@@ -8,14 +8,17 @@ import {
   List,
   Code2,
   ChevronRight,
-  Quote, ImageIcon,
-  Minus, AlignLeft,
+  Quote,
+  ImageIcon,
+  Minus,
+  AlignLeft,
   AlignCenter,
   AlignRight,
   CodeSquare,
-  TextQuote
+  TextQuote,
 } from "lucide-react";
-import { FloatingMenu } from "@tiptap/react";
+import { FloatingMenu } from "@tiptap/react/menus";
+
 import {
   Command,
   CommandEmpty,
@@ -87,7 +90,7 @@ const groups: CommandGroupType[] = [
       },
       {
         title: "Numbered List",
-        description: "Create a ordered list",
+        description: "Create an ordered list",
         icon: ListOrdered,
         keywords: "numbered ol",
         command: (editor) => editor.chain().focus().toggleOrderedList().run(),
@@ -104,7 +107,8 @@ const groups: CommandGroupType[] = [
         description: "Insert an image",
         icon: ImageIcon,
         keywords: "image picture photo",
-        command: (editor) => editor.chain().focus().insertImagePlaceholder().run(),
+        command: (editor) =>
+          editor.chain().focus().insertImagePlaceholder().run(), // ⚠️ Make sure you’ve added this custom extension
       },
       {
         title: "Horizontal Rule",
@@ -186,7 +190,9 @@ export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
           items: group.items.filter(
             (item) =>
               item.title.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
-              item.description.toLowerCase().includes(debouncedSearch.toLowerCase()) ||
+              item.description
+                .toLowerCase()
+                .includes(debouncedSearch.toLowerCase()) ||
               item.keywords.toLowerCase().includes(debouncedSearch.toLowerCase())
           ),
         }))
@@ -283,7 +289,6 @@ export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
       editorElement.removeEventListener("keydown", handleEditorKeyDown);
   }, [handleKeyDown, editor]);
 
-  // Add new effect for resetting selectedIndex
   useEffect(() => {
     setSelectedIndex(-1);
   }, [search]);
@@ -333,7 +338,11 @@ export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
         },
       }}
     >
-      <Command role="listbox" ref={commandRef} className="z-50 w-72 overflow-hidden rounded-lg border bg-popover shadow-lg">
+      <Command
+        role="listbox"
+        ref={commandRef}
+        className="z-50 w-72 overflow-hidden rounded-lg border bg-popover shadow-lg"
+      >
         <ScrollArea className="max-h-[330px]">
           <CommandList>
             <CommandEmpty className="py-3 text-center text-sm text-muted-foreground">
@@ -375,9 +384,7 @@ export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
                         <item.icon className="h-4 w-4" />
                       </div>
                       <div className="flex flex-1 flex-col">
-                        <span className="text-sm font-medium">
-                          {item.title}
-                        </span>
+                        <span className="text-sm font-medium">{item.title}</span>
                         <span className="text-xs text-muted-foreground">
                           {item.description}
                         </span>
