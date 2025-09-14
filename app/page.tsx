@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,10 +15,13 @@ import {
   Star,
   BookOpen,
   Play,
-  Pause
+  Pause,
 } from "lucide-react";
+import { Globe } from "@/components/magicui/globe";
 import Link from "next/link";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
+import { Ripple } from "@/components/magicui/ripple";
+import { AnimatedBeamMultipleOutputDemo } from "@/components/animations/beam-animation";
 
 
 // --- TYPE DEFINITIONS ---
@@ -138,10 +141,10 @@ export default function Home() {
         <div
           className="relative flex items-center justify-center w-full min-h-[400px] h-[400px] md:min-h-[550px] rounded-[20px] sm:rounded-[30px] overflow-hidden"
         >
-          <BackgroundGradientAnimation 
-            containerClassName="absolute inset-0 w-full h-full" 
-            interactive={false} 
-            isAnimationPaused={isAnimationPaused} 
+          <BackgroundGradientAnimation
+            containerClassName="absolute inset-0 w-full h-full"
+            interactive={false}
+            isAnimationPaused={isAnimationPaused}
           />
           <div className="absolute inset-0 flex flex-col items-center justify-center w-full h-full z-10 space-y-6 px-4">
             <p className="bg-clip-text text-transparent drop-shadow-2xl bg-gradient-to-b from-white/80 to-white/20 
@@ -150,15 +153,15 @@ export default function Home() {
             </p>
             <div className="w-full max-w-lg">
               <PlaceholdersAndVanishInput
-                placeholders={placeholders}   
+                placeholders={placeholders}
                 onChange={handleChange}
                 onSubmit={onSubmit}
               />
             </div>
           </div>
-          <Button 
-            variant="outline" 
-            size="icon" 
+          <Button
+            variant="outline"
+            size="icon"
             className="absolute bottom-4 right-4 z-20 bg-white/10 rounded-full backdrop-blur-sm hover:bg-white/20"
             onClick={() => setIsAnimationPaused(!isAnimationPaused)}
           >
@@ -166,6 +169,45 @@ export default function Home() {
           </Button>
         </div>
       </section>
+      <section className="w-full flex justify-center mb-12 px-4">
+  <div className="w-full max-w-6xl flex flex-col gap-4">
+    {/* Hero Card */}
+    <Card className="w-full overflow-hidden">
+      <div className="relative flex h-[400px] w-full flex-col items-center justify-center rounded-lg bg-background p-4 md:p-6">
+        <div className="absolute inset-0 z-0 opacity-50">
+          <Globe />
+        </div>
+        <div className="z-10 flex flex-col items-center text-center">
+          <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
+            Global Reach, Local Impact
+          </h2>
+          <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
+            Blaze Neuro connects developers and innovators worldwide. Explore
+            projects, share knowledge, and collaborate on the next big thing.
+          </p>
+        </div>
+      </div>
+    </Card>
+
+    {/* Cards Container */}
+    <div className="flex gap-4 overflow-x-auto md:grid md:grid-cols-2 md:overflow-visible">
+      {/* Card 1 */}
+      <Card className="min-w-[280px] md:min-w-0 flex-shrink-0">
+        <div className="relative flex h-[300px] w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-br from-gray-900 to-gray-950">
+          <p className="z-10 animate-fade-in-up bg-gradient-to-b from-white to-gray-400 bg-clip-text text-center text-3xl font-bold text-transparent">
+            Experience the Ripple
+          </p>
+          <Ripple />
+        </div>
+      </Card>
+
+      {/* Card 2 */}
+      <Card className="min-w-[280px] md:min-w-0 flex-shrink-0 overflow-hidden">
+        <AnimatedBeamMultipleOutputDemo className="h-[300px]" />
+      </Card>
+    </div>
+  </div>
+</section>
 
 
 
