@@ -108,7 +108,7 @@ const groups: CommandGroupType[] = [
         icon: ImageIcon,
         keywords: "image picture photo",
         command: (editor) =>
-          editor.chain().focus().insertImagePlaceholder().run(), // ⚠️ Make sure you’ve added this custom extension
+          editor.chain().focus().insertImagePlaceholder().run(), // ⚠️ Make sure you've added this custom extension
       },
       {
         title: "Horizontal Rule",
@@ -302,7 +302,7 @@ export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
   return (
     <FloatingMenu
       editor={editor}
-      shouldShow={({ state }) => {
+      shouldShow={({ state }: { state: any }) => {
         if (!editor) return false;
 
         const { $from } = state.selection;
@@ -328,20 +328,12 @@ export function TipTapFloatingMenu({ editor }: { editor: Editor }) {
         if (!isOpen) setIsOpen(true);
         return true;
       }}
-      tippyOptions={{
-        placement: "bottom-start",
-        interactive: true,
-        appendTo: () => document.body,
-        onHide: () => {
-          setIsOpen(false);
-          setSelectedIndex(-1);
-        },
-      }}
+      className="z-50"
     >
       <Command
         role="listbox"
         ref={commandRef}
-        className="z-50 w-72 overflow-hidden rounded-lg border bg-popover shadow-lg"
+        className="w-72 overflow-hidden rounded-lg border bg-popover shadow-lg"
       >
         <ScrollArea className="max-h-[330px]">
           <CommandList>
