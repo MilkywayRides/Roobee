@@ -26,7 +26,7 @@ import {
 } from "@/components/ui/tooltip";
 import { useToolbar } from "./toolbar-provider";
 
-export const AlignmentTooolbar = () => {
+export const AlignmentToolbar = () => {
   const { editor } = useToolbar();
   const isMobile = useMediaQuery("(max-width: 640px)");
   const handleAlign = (value: string) => {

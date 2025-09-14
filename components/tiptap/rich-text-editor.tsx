@@ -20,23 +20,12 @@ import { TipTapFloatingMenu } from "@/components/tiptap/extensions/floating-menu
 import { FloatingToolbar } from "@/components/tiptap/extensions/floating-toolbar";
 import { EditorToolbar } from "./toolbars/editor-toolbar";
 import Placeholder from "@tiptap/extension-placeholder";
-import { content } from "@/lib/content";
 
 const extensions = [
   StarterKit.configure({
-    orderedList: {
-      HTMLAttributes: {
-        class: "list-decimal",
-      },
-    },
-    bulletList: {
-      HTMLAttributes: {
-        class: "list-disc",
-      },
-    },
-    heading: {
-      levels: [1, 2, 3, 4],
-    },
+    orderedList: { HTMLAttributes: { class: "list-decimal" } },
+    bulletList: { HTMLAttributes: { class: "list-disc" } },
+    heading: { levels: [1, 2, 3, 4] },
   }),
   Placeholder.configure({
     emptyNodeClass: "is-editor-empty",
@@ -47,7 +36,6 @@ const extensions = [
         case "detailsSummary":
           return "Section title";
         case "codeBlock":
-          // never show the placeholder when editing code
           return "";
         default:
           return "Write, type '/' for commands";
@@ -55,43 +43,41 @@ const extensions = [
     },
     includeChildren: false,
   }),
-  TextAlign.configure({
-    types: ["heading", "paragraph"],
-  }),
+  TextAlign.configure({ types: ["heading", "paragraph"] }),
   TextStyle,
   Subscript,
   Superscript,
   Underline,
   Link,
   Color,
-  Highlight.configure({
-    multicolor: true,
-  }),
+  Highlight.configure({ multicolor: true }),
   ImageExtension,
   ImagePlaceholder,
   SearchAndReplace,
   Typography,
-  BubbleMenu.configure({
-    pluginKey: "bubbleMenu",
-  }),
+  BubbleMenu.configure({ pluginKey: "bubbleMenu" }),
 ];
 
-export function RichTextEditorDemo({ className }: { className?: string }) {
+export function RichTextEditorDemo({
+  value,
+  onChange,
+  className,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+  className?: string;
+}) {
   const editor = useEditor({
     immediatelyRender: false,
     extensions: extensions as Extension[],
-    content,
+    content: value || "", // ✅ take initial content from props
     editorProps: {
       attributes: {
         class: "max-w-full focus:outline-none",
       },
     },
     onUpdate: ({ editor }) => {
-      // do what you want to do with output
-      // Update stats
-      // saving as text/json/hmtml
-      // const text = editor.getHTML();
-      console.log(editor.getText());
+      onChange(editor.getHTML()); // ✅ push updates to parent
     },
   });
 
@@ -100,7 +86,7 @@ export function RichTextEditorDemo({ className }: { className?: string }) {
   return (
     <div
       className={cn(
-        "relative max-h-[calc(100dvh-6rem)]  w-full overflow-hidden overflow-y-scroll border bg-card pb-[60px] sm:pb-0",
+        "relative max-h-[calc(100dvh-6rem)] w-full overflow-hidden overflow-y-scroll border bg-card pb-[60px] sm:pb-0",
         className
       )}
     >
@@ -109,7 +95,7 @@ export function RichTextEditorDemo({ className }: { className?: string }) {
       <TipTapFloatingMenu editor={editor} />
       <EditorContent
         editor={editor}
-        className=" min-h-[600px] w-full min-w-full cursor-text sm:p-6"
+        className="min-h-[600px] w-full min-w-full cursor-text sm:p-6"
       />
     </div>
   );

@@ -16,7 +16,7 @@ import { HeadingsToolbar } from "../toolbars/headings";
 import { BulletListToolbar } from "../toolbars/bullet-list";
 import { OrderedListToolbar } from "../toolbars/ordered-list";
 import { ImagePlaceholderToolbar } from "../toolbars/image-placeholder-toolbar";
-import { AlignmentTooolbar } from "../toolbars/alignment";
+import { AlignmentToolbar } from "../toolbars/alignment";
 import { BlockquoteToolbar } from "../toolbars/blockquote";
 import { useEffect } from "react";
 
@@ -78,7 +78,7 @@ export function FloatingToolbar({ editor }: { editor: Editor | null }) {
                   <Separator orientation="vertical" className="h-6 mx-1" />
 
                   {/* Additional controls */}
-                  <AlignmentTooolbar />
+                  <AlignmentToolbar />
                   <BlockquoteToolbar />
                 </div>
               </div>

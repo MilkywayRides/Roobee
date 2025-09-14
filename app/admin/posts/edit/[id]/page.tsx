@@ -7,10 +7,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RichTextEditorDemo } from "@/components/tiptap/rich-text-editor";
+import { marked } from "marked";
+import TurndownService from "turndown";
 
 export default function EditPostPage() {
   const router = useRouter();
@@ -24,6 +25,8 @@ export default function EditPostPage() {
   const [feature, setFeature] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const turndownService = new TurndownService();
 
   useEffect(() => {
     if (!id) return;
@@ -140,14 +143,11 @@ export default function EditPostPage() {
             </div>
             <div>
               <Label htmlFor="markdown">Markdown Content</Label>
-              <Textarea
-                id="markdown"
-                value={markdown}
-                onChange={e => setMarkdown(e.target.value)}
-                className="mt-1 min-h-[200px] font-mono"
-                required
+              <RichTextEditorDemo
+                value={marked(markdown) as string}
+                onChange={(html) => setMarkdown(turndownService.turndown(html))}
+                className="w-full rounded-xl"
               />
-              <RichTextEditorDemo className="w-full rounded-xl"/>
             </div>
             <div>
               <Label htmlFor="tags">Tags (comma separated)</Label>
