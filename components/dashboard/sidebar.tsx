@@ -37,17 +37,18 @@ import {
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Plus, Mail } from "lucide-react";
 import { UserProfile } from "./user-profile";
+import { DashboardSquareIcon, UsersIcon, FileIcon, MailIcon, Folder02BulkRounded, GearIcon } from "../icons";
 
 const navigation = [
   {
     name: "Dashboard",
     href: "/admin",
-    icon: LayoutDashboard,
+    icon: DashboardSquareIcon,
   },
   {
     name: "Users",
     href: "/admin/users",
-    icon: Users,
+    icon: UsersIcon,
   },
   {
     name: "Noding",
@@ -57,17 +58,17 @@ const navigation = [
   {
     name: "Projects",
     href: "/admin/projects",
-    icon: FileText,
+    icon: Folder02BulkRounded,
   },
   {
     name: "Posts",
     href: "/admin/posts",
-    icon: BarChart3,
+    icon: FileIcon,
   },
   {
     name: "Client Settings",
     href: "/admin/settings",
-    icon: Settings,
+    icon: GearIcon,
   },
 ];
 
@@ -142,7 +143,7 @@ export function Sidebar({ className, collapsed, setCollapsed, mobileOpen, setMob
             <Tooltip delayDuration={100}>
               <TooltipTrigger asChild>
                 <Button variant="outline" size="icon">
-                  <Mail className="h-4 w-4" />
+                  <MailIcon className="h-4 w-4" />
                   <span className="sr-only">Inbox</span>
                 </Button>
               </TooltipTrigger>
