@@ -22,6 +22,8 @@ import Link from "next/link";
 import { PlaceholdersAndVanishInput } from "@/components/ui/placeholders-and-vanish-input";
 import { Ripple } from "@/components/magicui/ripple";
 import { AnimatedBeamMultipleOutputDemo } from "@/components/animations/beam-animation";
+import CurvedCardFooter from "@/components/footer";
+import { PauseIcon, PlayIcon } from "@/components/icons";
 
 
 // --- TYPE DEFINITIONS ---
@@ -162,54 +164,13 @@ export default function Home() {
           <Button
             variant="outline"
             size="icon"
-            className="absolute bottom-4 right-4 z-20 bg-white/10 rounded-full backdrop-blur-sm hover:bg-white/20"
+            className="absolute border-none bottom-4 right-4 z-20 bg-white/10 rounded-full backdrop-blur-sm hover:bg-white/20"
             onClick={() => setIsAnimationPaused(!isAnimationPaused)}
           >
-            {isAnimationPaused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
+            {isAnimationPaused ? <PlayIcon className="h-4 w-4 text-white" /> : <PauseIcon className="h-4 w-4 text-white" />}
           </Button>
         </div>
       </section>
-      <section className="w-full flex justify-center mb-12 px-4">
-  <div className="w-full max-w-6xl flex flex-col gap-4">
-    {/* Hero Card */}
-    <Card className="w-full overflow-hidden">
-      <div className="relative flex h-[400px] w-full flex-col items-center justify-center rounded-lg bg-background p-4 md:p-6">
-        <div className="absolute inset-0 z-0 opacity-50">
-          <Globe />
-        </div>
-        <div className="z-10 flex flex-col items-center text-center">
-          <h2 className="text-3xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-b from-neutral-50 to-neutral-400">
-            Global Reach, Local Impact
-          </h2>
-          <p className="mt-4 text-lg text-muted-foreground max-w-2xl">
-            Blaze Neuro connects developers and innovators worldwide. Explore
-            projects, share knowledge, and collaborate on the next big thing.
-          </p>
-        </div>
-      </div>
-    </Card>
-
-    {/* Cards Container */}
-    <div className="flex gap-4 overflow-x-auto md:grid md:grid-cols-2 md:overflow-visible">
-      {/* Card 1 */}
-      <Card className="min-w-[280px] md:min-w-0 flex-shrink-0">
-        <div className="relative flex h-[300px] w-full flex-col items-center justify-center overflow-hidden rounded-lg border bg-gradient-to-br from-gray-900 to-gray-950">
-          <p className="z-10 animate-fade-in-up bg-gradient-to-b from-white to-gray-400 bg-clip-text text-center text-3xl font-bold text-transparent">
-            Experience the Ripple
-          </p>
-          <Ripple />
-        </div>
-      </Card>
-
-      {/* Card 2 */}
-      <Card className="min-w-[280px] md:min-w-0 flex-shrink-0 overflow-hidden">
-        <AnimatedBeamMultipleOutputDemo className="h-[300px]" />
-      </Card>
-    </div>
-  </div>
-</section>
-
-
 
       {/* Featured Posts Section */}
       <section className="py-20">
@@ -271,6 +232,7 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {/* <CurvedCardFooter /> */}
 
     </MainLayout>
   );
