@@ -40,7 +40,11 @@ export default function ProfilePage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <ProfileForm user={session?.user} />
+              {session?.user ? (
+                <ProfileForm user={session.user} />
+              ) : (
+                <p>Loading user profile...</p> // Or a loading skeleton component
+              )}
             </CardContent>
           </Card>
         </div>
