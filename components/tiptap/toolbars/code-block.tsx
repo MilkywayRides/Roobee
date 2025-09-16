@@ -1,81 +1,50 @@
-// "use client";
+"use client";
 
-// import React, { useState } from "react";
-// import { Button } from "@/components/ui/button";
-// import { Check, Copy } from "lucide-react";
-// import Highlight, { defaultProps } from "prism-react-renderer";
-// import theme from "prism-react-renderer/themes/vsDark";
+import { Code } from "lucide-react";
+import React from "react";
 
-// interface CodeBlockProps {
-//   language: string;
-//   fileName?: string;
-//   children: string;
-//   className?: string;
-// }
+import { Button, type ButtonProps } from "@/components/ui/button";
+import {
+	Tooltip,
+	TooltipContent,
+	TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
+import { useToolbar } from "./toolbar-provider";
 
-// export const CodeBlock: React.FC<CodeBlockProps> = ({
-//   language,
-//   fileName,
-//   children,
-//   className,
-// }) => {
-//   const [copied, setCopied] = useState(false);
+const CodeBlockToolbar = React.forwardRef<HTMLButtonElement, ButtonProps>(
+	({ className, onClick, children, ...props }, ref) => {
+		const { editor } = useToolbar();
+		return (
+			<Tooltip>
+				<TooltipTrigger asChild>
+					<Button
+						variant="ghost"
+						size="icon"
+						className={cn(
+							"h-8 w-8 p-0 sm:h-9 sm:w-9",
+							editor?.isActive("codeBlock") && "bg-accent",
+							className,
+						)}
+						onClick={(e) => {
+							editor?.chain().focus().toggleCodeBlock().run();
+							onClick?.(e);
+						}}
+						disabled={!editor?.can().chain().focus().toggleCodeBlock().run()}
+						ref={ref}
+						{...props}
+					>
+						{children ?? <Code className="h-4 w-4" />}
+					</Button>
+				</TooltipTrigger>
+				<TooltipContent>
+					<span>Code Block</span>
+				</TooltipContent>
+			</Tooltip>
+		);
+	},
+);
 
-//   const copyToClipboard = async () => {
-//     try {
-//       await navigator.clipboard.writeText(children);
-//       setCopied(true);
-//       setTimeout(() => setCopied(false), 2000);
-//     } catch (err) {
-//       console.error("Failed to copy code:", err);
-//     }
-//   };
+CodeBlockToolbar.displayName = "CodeBlockToolbar";
 
-//   return (
-//     <div
-//       className={`relative rounded-lg overflow-hidden border border-border bg-muted/70 backdrop-blur ${className}`}
-//     >
-//       {/* Top bar */}
-//       <div className="flex items-center justify-between px-4 py-2 bg-muted border-b border-border">
-//         <span className="text-sm font-mono text-muted-foreground truncate">
-//           {fileName || language}
-//         </span>
-//         <Button
-//           variant="ghost"
-//           size="icon"
-//           className="h-7 w-7"
-//           onClick={copyToClipboard}
-//         >
-//           {copied ? (
-//             <Check className="h-4 w-4 text-green-500" />
-//           ) : (
-//             <Copy className="h-4 w-4 text-muted-foreground" />
-//           )}
-//         </Button>
-//       </div>
-
-//       {/* Syntax highlighted code */}
-//       <Highlight
-//         {...defaultProps}
-//         code={children.trim()}
-//         language={language as any}
-//         theme={theme}
-//       >
-//         {({ className: prismClass, style, tokens, getLineProps, getTokenProps }) => (
-//           <pre
-//             className={`text-sm p-4 overflow-x-auto ${prismClass}`}
-//             style={{ ...style, background: "transparent" }}
-//           >
-//             {tokens.map((line, i) => (
-//               <div key={i} {...getLineProps({ line })}>
-//                 {line.map((token, key) => (
-//                   <span key={key} {...getTokenProps({ token })} />
-//                 ))}
-//               </div>
-//             ))}
-//           </pre>
-//         )}
-//       </Highlight>
-//     </div>
-//   );
-// };
+export { CodeBlockToolbar };
