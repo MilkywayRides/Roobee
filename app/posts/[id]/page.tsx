@@ -12,6 +12,7 @@ import LikePost from "@/components/posts/likepost";
 import PostAuthor from "@/components/posts/postauthor";
 import PostInfo from "@/components/posts/postinfo";
 import MarkdownRenderer from "@/components/posts/postcontent";
+import PostSidebar from "@/components/posts/postsidebar";
 
 interface Post {
   id: string;
@@ -127,6 +128,7 @@ export default function PostDetailPage() {
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
+        <PostSidebar />
         {/* Header */}
         <PostInfo post={post} />
 

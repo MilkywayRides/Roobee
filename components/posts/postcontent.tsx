@@ -1,14 +1,51 @@
 "use client";
 
-import React, { Children, isValidElement } from "react";
+import React, {
+  Children,
+  isValidElement,
+  useState,
+  ComponentProps,
+} from "react";
 import ReactMarkdown from "react-markdown";
-import { CodeBlock } from "../ui/code-block";
 
 interface MarkdownRendererProps {
   markdown: string;
 }
 
 const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdown }) => {
+  const [copiedStates, setCopiedStates] = useState<{ [key: string]: boolean }>(
+    {}
+  );
+
+  const copyToClipboard = async (text: string, key: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedStates((prev) => ({ ...prev, [key]: true }));
+      setTimeout(() => {
+        setCopiedStates((prev) => ({ ...prev, [key]: false }));
+      }, 2000);
+    } catch (err) {
+      console.error("Failed to copy text: ", err);
+    }
+  };
+
+  // Recursively extract text content from React nodes
+  const extractCodeContent = (children: React.ReactNode): string => {
+    if (typeof children === "string") return children;
+    if (Array.isArray(children)) {
+      return children.map(extractCodeContent).join("");
+    }
+    if (
+      React.isValidElement(children) &&
+      children.props &&
+      typeof children.props === "object" &&
+      "children" in children.props
+    ) {
+      return extractCodeContent(children.props.children as React.ReactNode);
+    }
+    return "";
+  };
+
   return (
     <div className="prose prose-neutral dark:prose-invert max-w-none mb-12 [&>*]:mb-4 [&>*:last-child]:mb-0">
       <ReactMarkdown
@@ -62,61 +99,176 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdown }) => {
               {children}
             </blockquote>
           ),
-          pre: (props) => {
-            const { node, children, ...rest } = props;
+
+          /** PRE (multiline code block wrapper) */
+          pre: (props: ComponentProps<"pre">) => {
+            const { children, ...rest } = props;
             const codeChild = Children.toArray(children).find(
-              (child) =>
-                isValidElement(child) && (child as any).type === "code"
+              (child) => isValidElement(child) && (child as any).type === "code"
             ) as React.ReactElement | undefined;
 
-            if (codeChild && codeChild.props && typeof codeChild.props === "object") {
-              const props = codeChild.props as {
+            let language = "text";
+            let fileName: string | undefined;
+            const codeContent = extractCodeContent(children);
+            const codeKey = `${language}-${codeContent.slice(0, 50)}`; // Unique key
+
+            if (codeChild && codeChild.props) {
+              const codeProps = codeChild.props as {
                 className?: string;
                 node?: { data?: { meta?: string } };
                 children?: React.ReactNode;
               };
-              const language =
-                (props.className || "").replace("language-", "") || "text";
-              const fileName = props.node?.data?.meta as string | undefined;
-              const codeString = props.children;
-              return (
-                <CodeBlock
-                  language={language}
-                  fileName={fileName}
-                  className="mb-4"
-                >
-                  {String(codeString).replace(/\n$/, "")}
-                </CodeBlock>
-              );
+              language =
+                (codeProps.className || "").replace("language-", "") || "text";
+              fileName = codeProps.node?.data?.meta as string | undefined;
             }
 
             return (
-              <pre
-                className="bg-muted border border-border rounded-lg p-4 overflow-x-auto mb-4"
-                {...rest}
-              >
-                {children}
-              </pre>
+              <div className="relative mb-4 group">
+                {(language !== "text" || fileName) && (
+                  <div className="flex items-center justify-between bg-muted/80 border border-border border-b-0 rounded-t-lg px-4 py-2">
+                    <div className="flex items-center gap-2">
+                      {fileName && (
+                        <span className="text-sm font-medium text-foreground">
+                          {fileName}
+                        </span>
+                      )}
+                      {language !== "text" && (
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded uppercase font-mono">
+                          {language}
+                        </span>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => copyToClipboard(codeContent, codeKey)}
+                      className="flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground bg-background/50 hover:bg-background border border-border/50 hover:border-border rounded transition-all duration-200"
+                      title="Copy code"
+                    >
+                      {copiedStates[codeKey] ? (
+                        <>
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          <span>Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+                <div className="relative">
+                  <pre
+                    className={`bg-muted border border-border overflow-x-auto ${
+                      language !== "text" || fileName
+                        ? "rounded-b-lg rounded-t-none"
+                        : "rounded-lg"
+                    } p-4`}
+                    {...rest}
+                  >
+                    {children}
+                  </pre>
+                  {!(language !== "text" || fileName) && (
+                    <button
+                      onClick={() => copyToClipboard(codeContent, codeKey)}
+                      className="absolute top-3 right-3 flex items-center gap-1.5 px-2 py-1 text-xs text-muted-foreground hover:text-foreground bg-background/90 hover:bg-background border border-border/50 hover:border-border rounded transition-all duration-200 opacity-0 group-hover:opacity-100"
+                      title="Copy code"
+                    >
+                      {copiedStates[codeKey] ? (
+                        <>
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M5 13l4 4L19 7"
+                            />
+                          </svg>
+                          <span>Copied</span>
+                        </>
+                      ) : (
+                        <>
+                          <svg
+                            className="w-3 h-3"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            />
+                          </svg>
+                          <span>Copy</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
             );
           },
-          code: (props) => {
-            const { className, children, ...rest } = props;
-            const inline = (props as any).inline;
+
+          /** CODE (inline + block content) */
+          code: (props: ComponentProps<"code"> & { inline?: boolean }) => {
+            const { className, children, inline, ...rest } = props;
+
             if (inline) {
               return (
                 <code
                   {...rest}
-                  className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground"
+                  className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono text-foreground border border-border/50"
                 >
                   {children}
                 </code>
               );
             }
-            return <code {...rest} className={className}>{children}</code>;
+
+            return (
+              <code
+                {...rest}
+                className={`${className || ""} text-sm font-mono leading-relaxed text-foreground`}
+              >
+                {children}
+              </code>
+            );
           },
+
           a: ({ href, children }) => (
             <a
-              href={href}
+              href={href || "#"}
               className="text-primary hover:text-primary/80 underline underline-offset-2 transition-colors"
               target="_blank"
               rel="noopener noreferrer"
@@ -133,7 +285,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdown }) => {
           hr: () => <hr className="border-border my-8" />,
           table: ({ children }) => (
             <div className="overflow-x-auto mb-4">
-              <table className="w-full border-collapse border border-border">
+              <table className="w-full border-collapse border border-border rounded-lg">
                 {children}
               </table>
             </div>
@@ -141,15 +293,15 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdown }) => {
           thead: ({ children }) => <thead className="bg-muted">{children}</thead>,
           tbody: ({ children }) => <tbody>{children}</tbody>,
           tr: ({ children }) => (
-            <tr className="border-b border-border">{children}</tr>
+            <tr className="border-b border-border last:border-b-0">{children}</tr>
           ),
           th: ({ children }) => (
-            <th className="border border-border px-4 py-2 text-left font-semibold text-foreground">
+            <th className="border-r border-border last:border-r-0 px-4 py-3 text-left font-semibold text-foreground">
               {children}
             </th>
           ),
           td: ({ children }) => (
-            <td className="border border-border px-4 py-2 text-foreground">
+            <td className="border-r border-border last:border-r-0 px-4 py-3 text-foreground">
               {children}
             </td>
           ),
@@ -157,7 +309,7 @@ const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({ markdown }) => {
             <img
               src={src || ""}
               alt={alt || ""}
-              className="max-w-full h-auto rounded-lg border border-border my-4"
+              className="max-w-full h-auto rounded-lg border border-border my-4 shadow-sm"
             />
           ),
         }}
