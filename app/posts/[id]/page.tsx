@@ -149,7 +149,17 @@ export default function PostDetailPage() {
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <PostSidebar posts={posts} />
+      <PostSidebar
+        posts={posts.map((p) => ({
+          id: p.id,
+          title: p.title,
+          date: p.createdAt, // Map createdAt to the expected 'date' prop
+          excerpt: p.description, // Map description to the optional 'excerpt' prop
+          // category can be added here if available, e.g., from p.tags
+        }))}
+        currentPostId={postId}
+        loading={postsLoading}
+      />
 
       {/* Main Content */}
       <div className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
