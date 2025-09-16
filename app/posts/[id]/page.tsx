@@ -29,26 +29,48 @@ interface Post {
   };
   nextPost?: { id: string; title: string } | null;
   prevPost?: { id: string; title: string } | null;
+  likes?: { userId: string; value: 1 | -1 }[];
 }
 
 export default function PostDetailPage() {
   const params = useParams();
   const postId = params?.id as string;
   const [post, setPost] = useState<Post | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [postLoading, setPostLoading] = useState(true);
+  const [postsLoading, setPostsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [posts, setPosts] = useState<Post[]>([]);
   const [likeLoading, setLikeLoading] = useState(false);
   const [followLoading, setFollowLoading] = useState(false);
   const [likeState, setLikeState] = useState<1 | -1 | 0>(0);
   const [likeCount, setLikeCount] = useState(0);
   const [dislikeCount, setDislikeCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
+
   const { data: session } = useSession() as { data: ExtendedSession | null };
   const router = useRouter();
 
+  // Fetch all posts for sidebar
+  useEffect(() => {
+    const loadPosts = async () => {
+      try {
+        const res = await fetch("/api/posts");
+        const data = await res.json();
+        setPosts(data);
+      } catch (error) {
+        console.error("Failed to load posts", error);
+      } finally {
+        setPostsLoading(false);
+      }
+    };
+    loadPosts();
+  }, []);
+
+  // Fetch current post
   useEffect(() => {
     if (!postId) return;
-    setLoading(true);
+    setPostLoading(true);
     fetch(`/api/posts/${postId}`)
       .then((res) => {
         if (!res.ok) throw new Error("Failed to fetch post");
@@ -57,12 +79,10 @@ export default function PostDetailPage() {
       .then((data) => {
         setPost(data);
 
-        // Calculate like/dislike counts
         const likes = data.likes || [];
         setLikeCount(likes.filter((l: any) => l.value === 1).length);
         setDislikeCount(likes.filter((l: any) => l.value === -1).length);
 
-        // Set current user's like/dislike state safely
         const userId = session?.user?.id as string | undefined;
         if (userId) {
           const userLike = likes.find((l: any) => l.userId === userId);
@@ -70,10 +90,11 @@ export default function PostDetailPage() {
         }
       })
       .catch(() => setError("Failed to load post"))
-      .finally(() => setLoading(false));
+      .finally(() => setPostLoading(false));
   }, [postId, session?.user?.id]);
 
-  if (loading) {
+  // Skeleton loader for single post
+  if (postLoading) {
     return (
       <div className="min-h-screen bg-background">
         <div className="container mx-auto px-4 py-8 max-w-4xl">
@@ -126,22 +147,16 @@ export default function PostDetailPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <PostSidebar />
-        {/* Header */}
+    <div className="min-h-screen bg-background flex">
+      {/* Sidebar */}
+      <PostSidebar posts={posts} />
+
+      {/* Main Content */}
+      <div className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
         <PostInfo post={post} />
-
-        {/* Content */}
         <MarkdownRenderer markdown={post.markdown} />
-
-        {/* Author section */}
         <PostAuthor />
-
-        {/* Interaction buttons */}
         <LikePost />
-
-        {/* Navigation */}
         <Navigation prevPost={post.prevPost} nextPost={post.nextPost} />
       </div>
     </div>
