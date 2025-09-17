@@ -16,7 +16,6 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import PostSidebarSkeleton from "./post-sidebar-skeleton";
 
 // Interface definitions
 interface Post {
@@ -78,10 +77,6 @@ const SidebarContent: React.FC<PostSidebarProps> = ({
             day: "numeric",
         });
     };
-
-    if (loading) {
-        return <PostSidebarSkeleton />;
-    }
 
     return (
         <div className="flex flex-col h-full bg-card">

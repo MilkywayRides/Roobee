@@ -13,7 +13,6 @@ import PostAuthor from "@/components/posts/postauthor";
 import PostInfo from "@/components/posts/postinfo";
 import MarkdownRenderer from "@/components/posts/postcontent";
 import PostSidebar from "@/components/posts/postsidebar";
-import PostSidebarSkeleton from "@/components/posts/post-sidebar-skeleton";
 
 interface Post {
   id: string;
@@ -112,7 +111,7 @@ export default function PostDetailPage() {
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       {postsLoading ? (
-        <PostSidebarSkeleton />
+        <span></span>
       ) : (
         <PostSidebar
           posts={posts.map((p) => ({
