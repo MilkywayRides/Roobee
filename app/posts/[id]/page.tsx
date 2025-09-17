@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
-import { ExtendedSession } from "@/types";
+import { Session } from "next-auth";
 import Link from "next/link";
 import Navigation from "@/components/posts/navigation";
 import LikePost from "@/components/posts/likepost";
@@ -48,7 +48,7 @@ export default function PostDetailPage() {
   const [dislikeCount, setDislikeCount] = useState(0);
   const [isFollowing, setIsFollowing] = useState(false);
 
-  const { data: session } = useSession() as { data: ExtendedSession | null };
+  const { data: session } = useSession() as { data: Session | null };
   const router = useRouter();
 
   // Fetch all posts for sidebar

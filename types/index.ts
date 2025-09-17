@@ -13,15 +13,7 @@ export interface User {
   updatedAt: Date;
 }
 
-export interface ExtendedSession extends Session {
-  user?: {
-    id: string;
-    name?: string | null;
-    email?: string | null;
-    image?: string | null;
-    role?: UserRole;
-  };
-}
+
 
 export interface ApiResponse<T = any> {
   success: boolean;

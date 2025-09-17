@@ -20,7 +20,7 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 import { LogOut, User, Settings, Sun, Moon, Monitor, Shield } from "lucide-react";
-import { ExtendedSession } from "@/types";
+import { Session } from "next-auth";
 import { cn } from "@/lib/utils";
 
 interface AvatarButtonProps {
@@ -32,7 +32,7 @@ export function AvatarButton({ className }: AvatarButtonProps) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const { theme, setTheme } = useTheme();
   const router = useRouter();
-  const { data: session } = useSession() as { data: ExtendedSession | null };
+  const { data: session } = useSession() as { data: Session | null };
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {

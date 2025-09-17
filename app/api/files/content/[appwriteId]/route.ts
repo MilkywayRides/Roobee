@@ -3,7 +3,7 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/config/auth';
 import { prisma } from '@/lib/prisma';
 import { getFileDownload } from '@/lib/appwrite';
-// import { ExtendedSession } from '@/types'; // Remove if not needed
+
 import { ProjectFile, Project } from '@prisma/client';
 
 // Cache file content for 5 minutes

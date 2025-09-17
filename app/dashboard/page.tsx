@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/config/auth";
 import { redirect } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExtendedSession } from "@/types";
+import { Session } from "next-auth";
 import { ROLES } from "@/constants";
 
 export const metadata: Metadata = {
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
-  const session = (await getServerSession(authOptions)) as ExtendedSession | null;
+  const session = (await getServerSession(authOptions)) as Session | null;
 
   if (!session?.user) {
     redirect("/login");

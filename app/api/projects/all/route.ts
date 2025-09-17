@@ -2,11 +2,11 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/config/auth";
 import { prisma } from "@/lib/prisma";
-import { ExtendedSession } from "@/types";
+import { Session } from "next-auth";
 
 export async function GET() {
   try {
-    const session = await getServerSession(authOptions) as ExtendedSession | null;
+    const session = await getServerSession(authOptions) as Session | null;
     if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role!)) {
       return new NextResponse("Unauthorized", { status: 401 });
     }

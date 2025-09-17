@@ -2,13 +2,13 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/config/auth";
 import { prisma } from "@/lib/prisma";
-import { ExtendedSession } from "@/types";
+import { Session } from "next-auth";
 
 export async function GET() {
   try {
     console.log("[PROJECTS_PUBLIC] Fetching projects...");
     
-    const session = await getServerSession(authOptions) as ExtendedSession | null;
+    const session = await getServerSession(authOptions) as Session | null;
     let projects;
     
     if (!session?.user) {
