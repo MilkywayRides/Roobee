@@ -1,8 +1,9 @@
-import { Calendar, User } from "lucide-react";
+import { ArrowLeft, Calendar, User } from "lucide-react";
 import React from "react";
 import { Badge } from "../ui/badge";
 import Link from "next/link";
 import PostAuthor from "./postauthor";
+import { Button } from "../ui/button";
 
 interface Post {
   id: string;
@@ -27,7 +28,12 @@ const PostInfo: React.FC<PostInfoProps> = ({ post }) => {
   return (
     <div className="mb-8">
       {/* Breadcrumb */}
-      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+      <div className="flex items-center gap-2 text-muted-foreground mb-4">
+        <Button variant="ghost">
+          <Link href="/" className="hover:text-foreground transition-colors">
+            <ArrowLeft />
+          </Link>
+        </Button>
         <Link href="/posts" className="hover:text-foreground transition-colors">
           Posts
         </Link>
