@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Skeleton } from "@/components/ui/skeleton";
+import PostSidebarSkeleton from "./post-sidebar-skeleton";
 
 // Interface definitions
 interface Post {
@@ -80,13 +80,13 @@ const SidebarContent: React.FC<PostSidebarProps> = ({
     };
 
     if (loading) {
-        return <LoadingSkeleton />;
+        return <PostSidebarSkeleton />;
     }
 
     return (
         <div className="flex flex-col h-full bg-card">
             {/* Header & Filters */}
-            <div className="p-6 border-b">
+            <div className="pt-4 pb-1 px-4">
                 <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
                     <FileText className="w-5 h-5" />
                     <span>All Posts</span>
@@ -121,7 +121,7 @@ const SidebarContent: React.FC<PostSidebarProps> = ({
                                     key={post.id}
                                     onClick={() => handlePostClick(post.id)}
                                     className={cn(
-                                        "w-full text-left group p-2 rounded-lg border transition-all duration-200",
+                                        "w-full text-left group p-2 rounded-lg transition-all duration-200",
                                         "hover:shadow-md hover:border-primary/50 hover:bg-muted/50",
                                         currentPostId === post.id
                                             ? "bg-primary/5 border-primary shadow-sm"
@@ -132,17 +132,13 @@ const SidebarContent: React.FC<PostSidebarProps> = ({
                                         <div className="flex-1 min-w-0 pr-4">
                                             <h3
                                                 className={cn(
-                                                    "font-semibold leading-tight mb-2 group-hover:text-primary transition-colors",
+                                                    "font-semibold leading-tight m-1 mx-2 group-hover:text-primary transition-colors line-clamp-1",
                                                     currentPostId === post.id ? "text-primary" : "text-foreground"
                                                 )}
                                             >
                                                 {post.title}
                                             </h3>
-                                            {post.excerpt && (
-                                                <p className="text-sm text-muted-foreground mb-3 line-clamp-2">
-                                                    {post.excerpt}
-                                                </p>
-                                            )}
+
                                             <div className="flex items-center text-xs text-muted-foreground gap-2">
                                                 {post.category && (
                                                     <>
@@ -169,24 +165,7 @@ const SidebarContent: React.FC<PostSidebarProps> = ({
     );
 };
 
-// Loading Skeleton Component
-const LoadingSkeleton = () => (
-    <div className="p-6">
-        <div className="flex items-center gap-2 mb-4">
-            <Skeleton className="h-6 w-6" />
-            <Skeleton className="h-6 w-32" />
-        </div>
-        <div className="space-y-4">
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-10 w-full" />
-        </div>
-        <div className="space-y-3 mt-8">
-            {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-24 w-full rounded-lg" />
-            ))}
-        </div>
-    </div>
-);
+
 
 // Main responsive component
 const PostSidebar: React.FC<PostSidebarProps> = (props) => {

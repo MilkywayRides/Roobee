@@ -13,6 +13,7 @@ import PostAuthor from "@/components/posts/postauthor";
 import PostInfo from "@/components/posts/postinfo";
 import MarkdownRenderer from "@/components/posts/postcontent";
 import PostSidebar from "@/components/posts/postsidebar";
+import PostSidebarSkeleton from "@/components/posts/post-sidebar-skeleton";
 
 interface Post {
   id: string;
@@ -93,71 +94,6 @@ export default function PostDetailPage() {
       .finally(() => setPostLoading(false));
   }, [postId, session?.user?.id]);
 
-  // Skeleton loader for single post
-  if (postLoading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-          {/* PostInfo Skeleton */}
-          <div className="space-y-4 mb-8">
-            {/* Breadcrumb */}
-            <div className="flex items-center gap-2 text-sm">
-              <Skeleton className="h-4 w-12" />
-              <span>/</span>
-              <Skeleton className="h-4 w-48" />
-            </div>
-            {/* Title */}
-            <Skeleton className="h-10 w-3/4" />
-            {/* Description */}
-            <Skeleton className="h-5 w-full" />
-            <Skeleton className="h-5 w-1/2" />
-            {/* Meta */}
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-4 w-4" />
-                <Skeleton className="h-4 w-24" />
-              </div>
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-4 w-4" />
-                <Skeleton className="h-4 w-32" />
-              </div>
-            </div>
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2">
-              <Skeleton className="h-6 w-20" />
-              <Skeleton className="h-6 w-24" />
-              <Skeleton className="h-6 w-16" />
-            </div>
-          </div>
-
-          {/* MarkdownRenderer Skeleton */}
-          <div className="space-y-6">
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-3/4" />
-            <br />
-            <Skeleton className="h-4 w-full" />
-            <Skeleton className="h-4 w-5/6" />
-          </div>
-
-          {/* PostAuthor Skeleton */}
-          <div className="border-t border-border pt-8 mt-8">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <Skeleton className="h-12 w-12 rounded-full" />
-                <div>
-                  <Skeleton className="h-5 w-32" />
-                  <Skeleton className="h-4 w-20 mt-1" />
-                </div>
-              </div>
-              <Skeleton className="h-9 w-24" />
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   if (error) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -172,41 +108,80 @@ export default function PostDetailPage() {
     );
   }
 
-  if (!post) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <h1 className="text-2xl font-bold text-foreground">Post Not Found</h1>
-          <p className="text-muted-foreground">The post you're looking for doesn't exist.</p>
-          <Button asChild>
-            <Link href="/posts">Back to Posts</Link>
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
-      <PostSidebar
-        posts={posts.map((p) => ({
-          id: p.id,
-          title: p.title,
-          date: p.createdAt, // Map createdAt to the expected 'date' prop
-          excerpt: p.description, // Map description to the optional 'excerpt' prop
-          // category can be added here if available, e.g., from p.tags
-        }))}
-        currentPostId={postId}
-        loading={postsLoading}
-      />
+      {postsLoading ? (
+        <PostSidebarSkeleton />
+      ) : (
+        <PostSidebar
+          posts={posts.map((p) => ({
+            id: p.id,
+            title: p.title,
+            date: p.createdAt,
+            excerpt: p.description,
+          }))}
+          currentPostId={postId}
+          loading={postsLoading}
+        />
+      )}
 
       {/* Main Content */}
       <div className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
-        <PostInfo post={post} />
-        <MarkdownRenderer markdown={post.markdown} />
-        <LikePost />
-        <Navigation prevPost={post.prevPost} nextPost={post.nextPost} />
+        {postLoading || !post ? (
+          <div className="space-y-6">
+            <div className="space-y-4 mb-8">
+              <div className="flex items-center gap-2 text-sm">
+                <Skeleton className="h-4 w-12" />
+                <span>/</span>
+                <Skeleton className="h-4 w-48" />
+              </div>
+              <Skeleton className="h-10 w-3/4" />
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-1/2" />
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-4 w-24" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-4 w-4" />
+                  <Skeleton className="h-4 w-32" />
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Skeleton className="h-6 w-20" />
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-6 w-16" />
+              </div>
+            </div>
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4" />
+            <br />
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-5/6" />
+            <div className="border-t border-border pt-8 mt-8">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded-full" />
+                  <div>
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-4 w-20 mt-1" />
+                  </div>
+                </div>
+                <Skeleton className="h-9 w-24" />
+              </div>
+            </div>
+          </div>
+        ) : (
+          <>
+            <PostInfo post={post} />
+            <MarkdownRenderer markdown={post.markdown} />
+            <LikePost />
+            <Navigation prevPost={post.prevPost} nextPost={post.nextPost} />
+          </>
+        )}
       </div>
     </div>
   );
