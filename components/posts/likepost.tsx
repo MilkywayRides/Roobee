@@ -54,6 +54,7 @@ const LikePost = () => {
 
   return (
     <div className="flex items-center gap-4 mb-8">
+      <p>Was This Post Helpful?</p>
       <Button
         variant={likeState === 1 ? "default" : "outline"}
         size="sm"

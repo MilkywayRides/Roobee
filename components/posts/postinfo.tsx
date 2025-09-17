@@ -2,6 +2,7 @@ import { Calendar, User } from "lucide-react";
 import React from "react";
 import { Badge } from "../ui/badge";
 import Link from "next/link";
+import PostAuthor from "./postauthor";
 
 interface Post {
   id: string;
@@ -47,11 +48,8 @@ const PostInfo: React.FC<PostInfoProps> = ({ post }) => {
       )}
 
       {/* Meta info */}
+      <PostAuthor />
       <div className="flex items-center gap-6 text-sm text-muted-foreground mb-6">
-        <div className="flex items-center gap-2">
-          <User className="w-4 h-4" />
-          <span>{post.author?.name || "Unknown Author"}</span>
-        </div>
         <div className="flex items-center gap-2">
           <Calendar className="w-4 h-4" />
           <span>
