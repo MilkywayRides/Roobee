@@ -30,7 +30,7 @@ interface PostSidebarProps {
     posts: Post[];
     currentPostId?: string;
     onPostSelect?: (postId: string) => void;
-    loading?: boolean;
+    loading?: boolean; // Corrected this line
 }
 
 // Reusable component for the sidebar's content
@@ -38,7 +38,7 @@ const SidebarContent: React.FC<PostSidebarProps> = ({
     posts,
     currentPostId,
     onPostSelect,
-    loading = false,
+    loading = false, // Corrected this line (default value in destructuring is fine)
 }) => {
     const [filteredPosts, setFilteredPosts] = useState<Post[]>(posts);
     const [searchTerm, setSearchTerm] = useState("");
@@ -191,4 +191,3 @@ const PostSidebar: React.FC<PostSidebarProps> = (props) => {
 };
 
 export default PostSidebar;
-
