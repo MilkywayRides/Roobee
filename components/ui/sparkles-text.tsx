@@ -84,6 +84,8 @@ interface SparklesTextProps {
   };
 }
 
+// this is a commit message
+
 export const SparklesText: React.FC<SparklesTextProps> = ({
   children,
   colors = { first: "#9E7AFF", second: "#FE8BBB" },
