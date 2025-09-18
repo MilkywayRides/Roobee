@@ -5,9 +5,9 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(
   req: NextRequest,
-  params: any // Using 'any' to bypass type checking for now
+  { params }: { params: Promise<{ id: string }> }
 ) {
-  const id = params.id;
+  const { id } = await params;
   try {
     const session = await getServerSession(authOptions);
     const userId = (session?.user as any)?.id;
