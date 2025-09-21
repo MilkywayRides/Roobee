@@ -1,28 +1,165 @@
 import { NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/config/auth";
-import { prisma } from "@/lib/prisma";
-import { Session } from "next-auth";
+import { PrismaClient } from "@prisma/client";
 
-export async function POST(req: Request) {
+const prisma = new PrismaClient();
+
+export async function GET(request: Request) {
   try {
-    const session = await getServerSession(authOptions) as Session | null;
-    if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role!)) {
-      return new NextResponse("Unauthorized", { status: 401 });
+    const { searchParams } = new URL(request.url);
+    const category = searchParams.get('category');
+    const search = searchParams.get('search');
+    const limit = searchParams.get('limit');
+    const offset = searchParams.get('offset');
+    
+    const where: any = {};
+    
+    if (category && category !== 'all') {
+      where.category = category;
     }
-    const { name, description, isFree, coinCost } = await req.json();
-    const project = await prisma.project.create({
-      data: {
-        name,
-        description,
-        isFree,
-        coinCost: isFree ? null : coinCost,
-        ownerId: session.user.id!,
+    
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    
+    const projects = await prisma.project.findMany({
+      where,
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+        _count: {
+          select: {
+            files: true,
+          },
+        },
+      },
+      orderBy: {
+        updatedAt: 'desc',
+      },
+      take: limit ? parseInt(limit) : undefined,
+      skip: offset ? parseInt(offset) : undefined,
+    });
+    
+    // Get total count for pagination
+    const totalCount = await prisma.project.count({ where });
+    
+    return NextResponse.json({
+      projects,
+      totalCount,
+      hasMore: limit && offset ? (parseInt(offset) + parseInt(limit)) < totalCount : false,
+    });
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request: Request) {
+  try {
+    const body = await request.json();
+    const { name, description, category, price, githubRepo, ownerId } = body;
+    
+    // Validation
+    if (!name?.trim()) {
+      return NextResponse.json(
+        { error: "Project name is required" },
+        { status: 400 }
+      );
+    }
+    
+    if (!description?.trim()) {
+      return NextResponse.json(
+        { error: "Project description is required" },
+        { status: 400 }
+      );
+    }
+    
+    if (!['free', 'paid', 'premium'].includes(category)) {
+      return NextResponse.json(
+        { error: "Invalid category. Must be 'free', 'paid', or 'premium'" },
+        { status: 400 }
+      );
+    }
+    
+    if (category !== 'free' && (!price || price <= 0)) {
+      return NextResponse.json(
+        { error: "Price must be greater than 0 for paid/premium projects" },
+        { status: 400 }
+      );
+    }
+    
+    if (!ownerId) {
+      return NextResponse.json(
+        { error: "Owner ID is required" },
+        { status: 400 }
+      );
+    }
+    
+    // Check if owner exists
+    const owner = await prisma.user.findUnique({
+      where: { id: ownerId },
+    });
+    
+    if (!owner) {
+      return NextResponse.json(
+        { error: "Owner not found" },
+        { status: 404 }
+      );
+    }
+    
+    // Check for duplicate project names by the same owner
+    const existingProject = await prisma.project.findFirst({
+      where: {
+        name: name.trim(),
+        ownerId,
       },
     });
-    return NextResponse.json(project);
+    
+    if (existingProject) {
+      return NextResponse.json(
+        { error: "A project with this name already exists" },
+        { status: 409 }
+      );
+    }
+    
+    const newProject = await prisma.project.create({
+      data: {
+        name: name.trim(),
+        description: description.trim(),
+        category,
+        price: category === 'free' ? null : price,
+        githubRepo: githubRepo?.trim() || null,
+        ownerId,
+      },
+      include: {
+        owner: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+          },
+        },
+      },
+    });
+    
+    return NextResponse.json(newProject, { status: 201 });
   } catch (error) {
-    console.error("[PROJECT_CREATE]", error);
-    return new NextResponse("Internal error", { status: 500 });
+    console.error("Error creating project:", error);
+    return NextResponse.json(
+      { error: "Internal Server Error" },
+      { status: 500 }
+    );
   }
-} 
+}

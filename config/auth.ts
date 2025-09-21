@@ -39,8 +39,13 @@ export const authOptions: NextAuthOptions = {
     GithubProvider({
       clientId: process.env.GITHUB_CLIENT_ID!,
       clientSecret: process.env.GITHUB_CLIENT_SECRET!,
+      authorization: {
+        params: {
+          scope: "read:user user:email repo"
+        }
+      },
       httpOptions: {
-        timeout: 10000 // Increase timeout to 10 seconds
+        timeout: 10000
       }
     }),
     CredentialsProvider({
@@ -129,7 +134,7 @@ export const authOptions: NextAuthOptions = {
   },
   secret: process.env.NEXTAUTH_SECRET,
   callbacks: {
-    async jwt({ token, user, trigger, session }) {
+    async jwt({ token, user, account, trigger, session }) {
       if (trigger === "update" && session?.role) {
         token.role = session.role;
       }
@@ -137,6 +142,11 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.role = (user as ExtendedUser).role;
         token.emailVerified = (user as any).emailVerified;
+      }
+      
+      if (account) {
+        token.accessToken = account.access_token;
+        token.provider = account.provider;
       }
       
       return token;
@@ -168,6 +178,7 @@ export const authOptions: NextAuthOptions = {
           id: token.sub,
           emailVerified: token.emailVerified,
         },
+        accessToken: token.accessToken,
       };
     },
     async signIn({ user, account, profile }) {

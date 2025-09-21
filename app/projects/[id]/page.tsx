@@ -1,157 +1,227 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/config/auth';
-import { prisma } from '@/lib/prisma';
-import { notFound, redirect } from 'next/navigation';
-import ProjectView from './ProjectView';
+"use client";
 
-interface PageProps {
-  params: Promise<{
-    id: string;
-  }>;
-}
+import { useState, useEffect } from "react";
+import { MainLayout } from "@/components/layout/main-layout";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Skeleton } from "@/components/ui/skeleton";
+import { notFound } from "next/navigation";
+import { Project } from "@/types/project";
+import { Github, Download, Star, Eye, Calendar, User, Coins, ArrowLeft } from "lucide-react";
+import Link from "next/link";
 
-// Import the buildFileTree function from ProjectView
-function buildFileTree(files: any[]): any[] {
-  const tree: { [key: string]: any } = {};
-  const root: any[] = [];
+export default function ProjectDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [purchasing, setPurchasing] = useState(false);
 
-  // Filter out files without fileName and sort safely
-  const validFiles = files.filter(file => file.fileName && typeof file.fileName === 'string');
-  validFiles.sort((a, b) => (a.fileName || '').localeCompare(b.fileName || ''));
-
-  validFiles.forEach(file => {
-    const parts = file.fileName.split('/');
-    if (parts.length > 1) {
-      parts.shift();
-    }
-
-    let currentPath = '';
-    let parentNode: any = null;
-
-    parts.forEach((part: string, index: number) => {
-      const isLastPart = index === parts.length - 1;
-      currentPath = currentPath ? `${currentPath}/${part}` : part;
-
-      if (!tree[currentPath]) {
-        const node = {
-          name: part,
-          path: currentPath,
-          type: isLastPart ? 'file' : 'folder',
-          size: isLastPart ? file.fileSize : 0,
-          children: [],
-          appwriteId: isLastPart ? file.appwriteId : undefined
-        };
-
-        tree[currentPath] = node;
-
-        if (parentNode) {
-          parentNode.children?.push(node);
-        } else {
-          root.push(node);
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const { id } = await params;
+        const res = await fetch(`/api/projects/${id}`);
+        if (!res.ok) {
+          notFound();
         }
+        const data = await res.json();
+        setProject(data);
+      } catch (error) {
+        console.error("Error fetching project:", error);
+      } finally {
+        setLoading(false);
       }
-
-      parentNode = tree[currentPath];
-    });
-  });
-
-  return root;
-}
-
-export default async function ProjectPage({ params }: PageProps) {
-  try {
-    const session = await getServerSession(authOptions);
-    console.log('Session user:', (session?.user as any)?.id);
-    
-    if (!session?.user) {
-      console.log('No session, redirecting to login');
-      redirect('/login');
-    }
-
-    const { id: projectId } = await params;
-    console.log('Project ID:', projectId);
-    
-    if (!projectId) {
-      console.log('No project ID, showing not found');
-      notFound();
-    }
-
-    console.log('Fetching project from database...');
-    const project = await prisma.project.findUnique({
-      where: { id: projectId },
-      include: {
-        files: {
-          orderBy: { fileName: 'asc' }
-        },
-        owner: {
-          select: {
-            name: true,
-            email: true,
-            image: true
-          }
-        }
-      }
-    });
-
-    console.log('Project found:', !!project);
-    console.log('Project files count:', project?.files?.length);
-    console.log('Project name:', project?.name);
-    console.log('Project owner:', project?.owner?.name);
-
-    if (!project) {
-      console.log('Project not found, showing not found');
-      notFound();
-    }
-
-    console.log('Building file tree...');
-    const fileTree = buildFileTree(project.files);
-    console.log('File tree built, files count:', fileTree.length);
-
-    // Transform the project to match the expected interface
-    const transformedProject = {
-      ...project,
-      description: project.description || '',
-      owner: {
-        name: project.owner.name || '',
-        email: project.owner.email || '',
-        image: project.owner.image || ''
-      },
-      files: fileTree
     };
+    fetchProject();
+  }, [params]);
 
-    console.log('Transformed project files count:', transformedProject.files.length);
-    console.log('About to render ProjectView component...');
+  const handlePurchase = async () => {
+    setPurchasing(true);
+    // Simulate purchase process
+    setTimeout(() => {
+      setPurchasing(false);
+      alert("Purchase successful! You can now access this project.");
+    }, 2000);
+  };
 
-    // Simple fallback if ProjectView fails
-    try {
-      return <ProjectView project={transformedProject} />;
-    } catch (error) {
-      console.error('Error rendering ProjectView:', error);
-      return (
-        <div className="min-h-screen bg-background p-8">
-          <h1 className="text-2xl font-bold mb-4">Project: {transformedProject.name}</h1>
-          <p className="text-muted-foreground mb-4">{transformedProject.description}</p>
-          <p className="text-sm">Owner: {transformedProject.owner.name}</p>
-          <p className="text-sm">Files: {transformedProject.files.length}</p>
-          <div className="mt-4">
-            <h2 className="text-lg font-semibold mb-2">Files:</h2>
-            {transformedProject.files.length > 0 ? (
-              <ul className="space-y-1">
-                {transformedProject.files.map((file, index) => (
-                  <li key={index} className="text-sm">
-                    {file.name} ({file.type})
+  const getCategoryBadge = (category: string, price?: number) => {
+    switch (category) {
+      case "free":
+        return <Badge variant="secondary" className="bg-green-100 text-green-800">Free</Badge>;
+      case "paid":
+        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">{price} coins</Badge>;
+      case "premium":
+        return <Badge variant="secondary" className="bg-purple-100 text-purple-800">{price} coins</Badge>;
+      default:
+        return null;
+    }
+  };
+
+  if (loading) {
+    return (
+      <MainLayout>
+        <div className="max-w-4xl mx-auto py-8 px-4">
+          <Skeleton className="h-8 w-32 mb-6" />
+          <Card>
+            <CardHeader>
+              <Skeleton className="h-8 w-3/4" />
+              <Skeleton className="h-4 w-1/4" />
+            </CardHeader>
+            <CardContent>
+              <Skeleton className="h-4 w-full mb-2" />
+              <Skeleton className="h-4 w-2/3 mb-6" />
+              <Skeleton className="h-10 w-32" />
+            </CardContent>
+          </Card>
+        </div>
+      </MainLayout>
+    );
+  }
+
+  if (!project) {
+    return notFound();
+  }
+
+  return (
+    <MainLayout>
+      <div className="max-w-4xl mx-auto py-8 px-4">
+        <Button asChild variant="ghost" className="mb-6">
+          <Link href="/projects">
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Projects
+          </Link>
+        </Button>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <Card>
+              <CardHeader>
+                <div className="flex items-start justify-between">
+                  <div>
+                    <CardTitle className="text-2xl mb-2">{project.name}</CardTitle>
+                    {getCategoryBadge(project.category, project.price)}
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-6 leading-relaxed">
+                  {project.description || "No description available for this project."}
+                </p>
+                
+                <Separator className="my-6" />
+                
+                <div className="space-y-4">
+                  <h3 className="text-lg font-semibold">Project Details</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Created:</span>
+                      <span>Recently</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <User className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Owner:</span>
+                      <span>Project Owner</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Views:</span>
+                      <span>1,234</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Star className="h-4 w-4 text-muted-foreground" />
+                      <span className="text-muted-foreground">Stars:</span>
+                      <span>42</span>
+                    </div>
+                  </div>
+                </div>
+                
+                {project.githubRepo && (
+                  <>
+                    <Separator className="my-6" />
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-semibold">Repository</h3>
+                      <Button asChild variant="outline">
+                        <Link href={project.githubRepo} target="_blank" rel="noopener noreferrer">
+                          <Github className="h-4 w-4 mr-2" />
+                          View on GitHub
+                        </Link>
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+          
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Access Project</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {project.category === "free" ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      This project is free to access and use.
+                    </p>
+                    <Button asChild className="w-full">
+                      <Link href={`/projects/${project.id}/repo`}>
+                        <Download className="h-4 w-4 mr-2" />
+                        Access Repository
+                      </Link>
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center gap-2 text-lg font-semibold">
+                      <Coins className="h-5 w-5 text-yellow-500" />
+                      {project.price} coins
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Purchase this project to get full access to all files and documentation.
+                    </p>
+                    <Button 
+                      className="w-full" 
+                      onClick={handlePurchase}
+                      disabled={purchasing}
+                    >
+                      {purchasing ? "Processing..." : `Purchase for ${project.price} coins`}
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Features</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ul className="space-y-2 text-sm">
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                    Complete source code
                   </li>
-                ))}
-              </ul>
-            ) : (
-              <p className="text-muted-foreground">No files found</p>
-            )}
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                    Documentation included
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                    Regular updates
+                  </li>
+                  <li className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                    Community support
+                  </li>
+                </ul>
+              </CardContent>
+            </Card>
           </div>
         </div>
-      );
-    }
-  } catch (error) {
-    console.error('Error in ProjectPage:', error);
-    throw error;
-  }
-} 
+      </div>
+    </MainLayout>
+  );
+}

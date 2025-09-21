@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import {
   Select,
   SelectContent,
@@ -14,19 +16,45 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Plus, Github, Coins } from "lucide-react";
+import { Project } from "@/types/project";
+import { notFound } from "next/navigation";
+import { ArrowLeft, Edit, Github, Coins, Eye } from "lucide-react";
 import Link from "next/link";
 
-export default function CreateProjectPage() {
+export default function EditProjectPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [category, setCategory] = useState<"free" | "paid" | "premium">("free");
   const [price, setPrice] = useState("");
   const [githubRepo, setGithubRepo] = useState("");
-  const [creating, setCreating] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [originalProject, setOriginalProject] = useState<Project | null>(null);
+
+  useEffect(() => {
+    const fetchProject = async () => {
+      try {
+        const res = await fetch(`/api/projects/${params.id}`);
+        if (!res.ok) {
+          notFound();
+        }
+        const data = await res.json();
+        setOriginalProject(data);
+        setName(data.name);
+        setDescription(data.description || "");
+        setCategory(data.category);
+        setPrice(data.price?.toString() || "");
+        setGithubRepo(data.githubRepo || "");
+      } catch (error) {
+        console.error("Error fetching project:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProject();
+  }, [params.id]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -56,6 +84,17 @@ export default function CreateProjectPage() {
     return githubUrlPattern.test(url);
   };
 
+  const hasChanges = () => {
+    if (!originalProject) return false;
+    return (
+      name !== originalProject.name ||
+      description !== (originalProject.description || "") ||
+      category !== originalProject.category ||
+      price !== (originalProject.price?.toString() || "") ||
+      githubRepo !== (originalProject.githubRepo || "")
+    );
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -63,10 +102,10 @@ export default function CreateProjectPage() {
       return;
     }
     
-    setCreating(true);
+    setSaving(true);
     try {
-      const res = await fetch("/api/projects", {
-        method: "POST",
+      const res = await fetch(`/api/projects/${params.id}`, {
+        method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
@@ -76,7 +115,6 @@ export default function CreateProjectPage() {
           category,
           price: category === "free" ? undefined : Number(price),
           githubRepo: githubRepo.trim() || undefined,
-          ownerId: "clx1z23450000abcdef12345", // Hardcoded ownerId
         }),
       });
       
@@ -84,13 +122,13 @@ export default function CreateProjectPage() {
         router.push("/admin/projects");
       } else {
         const errorData = await res.json();
-        throw new Error(errorData.error || "Failed to create project");
+        throw new Error(errorData.error || "Failed to update project");
       }
     } catch (error) {
-      console.error("Error creating project:", error);
-      alert("Failed to create project. Please try again.");
+      console.error("Error updating project:", error);
+      alert("Failed to update project. Please try again.");
     } finally {
-      setCreating(false);
+      setSaving(false);
     }
   };
 
@@ -107,6 +145,24 @@ export default function CreateProjectPage() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <Skeleton className="h-8 w-64" />
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-10 w-32" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -116,10 +172,16 @@ export default function CreateProjectPage() {
             Back to Projects
           </Link>
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold">Create New Project</h1>
-          <p className="text-muted-foreground">Add a new project to your collection</p>
+        <div className="flex-1">
+          <h1 className="text-2xl font-bold">Edit Project</h1>
+          <p className="text-muted-foreground">Update project details and settings</p>
         </div>
+        <Button asChild variant="outline">
+          <Link href={`/projects/${params.id}`}>
+            <Eye className="h-4 w-4 mr-2" />
+            View Project
+          </Link>
+        </Button>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -127,7 +189,7 @@ export default function CreateProjectPage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Plus className="h-5 w-5" />
+                <Edit className="h-5 w-5" />
                 Project Details
               </CardTitle>
             </CardHeader>
@@ -160,7 +222,7 @@ export default function CreateProjectPage() {
                 
                 <div className="space-y-2">
                   <Label htmlFor="category">Category *</Label>
-                  <Select onValueChange={(value: "free" | "paid" | "premium") => setCategory(value)} defaultValue={category}>
+                  <Select onValueChange={(value: "free" | "paid" | "premium") => setCategory(value)} value={category}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select a category" />
                     </SelectTrigger>
@@ -228,13 +290,19 @@ export default function CreateProjectPage() {
                 </div>
                 
                 <div className="flex gap-2 pt-4">
-                  <Button type="submit" disabled={creating}>
-                    {creating ? "Creating..." : "Create Project"}
+                  <Button type="submit" disabled={saving || !hasChanges()}>
+                    {saving ? "Saving..." : "Save Changes"}
                   </Button>
                   <Button type="button" variant="outline" onClick={() => router.back()}>
                     Cancel
                   </Button>
                 </div>
+                
+                {!hasChanges() && (
+                  <p className="text-sm text-muted-foreground">
+                    No changes detected
+                  </p>
+                )}
               </form>
             </CardContent>
           </Card>
@@ -267,29 +335,34 @@ export default function CreateProjectPage() {
             </CardContent>
           </Card>
           
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Tips</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2 text-sm">
-              <div className="flex items-start gap-2">
-                <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mt-2" />
-                <span>Use a clear, descriptive name for your project</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mt-2" />
-                <span>Write a detailed description to help users understand the project</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mt-2" />
-                <span>Set appropriate pricing for paid/premium projects</span>
-              </div>
-              <div className="flex items-start gap-2">
-                <div className="h-1.5 w-1.5 bg-blue-500 rounded-full mt-2" />
-                <span>Link to GitHub repository for better credibility</span>
-              </div>
-            </CardContent>
-          </Card>
+          {originalProject && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg">Original Values</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2 text-sm">
+                <div>
+                  <span className="font-medium">Name:</span> {originalProject.name}
+                </div>
+                <div>
+                  <span className="font-medium">Category:</span> {originalProject.category}
+                </div>
+                {originalProject.price && (
+                  <div>
+                    <span className="font-medium">Price:</span> {originalProject.price} coins
+                  </div>
+                )}
+                {originalProject.githubRepo && (
+                  <div>
+                    <span className="font-medium">GitHub:</span> 
+                    <Link href={originalProject.githubRepo} className="text-blue-600 hover:underline ml-1" target="_blank">
+                      Repository
+                    </Link>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     </div>
