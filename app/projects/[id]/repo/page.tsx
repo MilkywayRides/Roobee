@@ -60,7 +60,7 @@ export default function RepoViewer() {
     setLoading(true);
     try {
       const repoUrl = project.githubRepo.replace("https://github.com/", "");
-      const apiUrl = `https://api.github.com/repos/${repoUrl}/contents/${path}`;
+      const apiUrl = `/api/github/repo/${repoUrl}/${path}`;
       
       const res = await fetch(apiUrl);
       const data = await res.json();
@@ -82,15 +82,18 @@ export default function RepoViewer() {
       setCurrentPath(file.path);
       return;
     }
-
-    if (!file.download_url) return;
     
     setLoading(true);
     try {
-      const res = await fetch(file.download_url);
-      const content = await res.text();
-      setFileContent(content);
-      setSelectedFile(file.name);
+      const repoUrl = project!.githubRepo.replace("https://github.com/", "");
+      const res = await fetch(`/api/github/repo/${repoUrl}/${file.path}`);
+      const data = await res.json();
+      
+      if (data.content) {
+        const content = atob(data.content.replace(/\s/g, ''));
+        setFileContent(content);
+        setSelectedFile(file.name);
+      }
     } catch (error) {
       console.error("Error fetching file content:", error);
     } finally {
