@@ -21,7 +21,7 @@ import { notFound } from "next/navigation";
 import { ArrowLeft, Edit, Github, Coins, Eye } from "lucide-react";
 import Link from "next/link";
 
-export default function EditProjectPage({ params }: { params: { id: string } }) {
+export default function EditProjectPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -32,11 +32,14 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
   const [saving, setSaving] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [originalProject, setOriginalProject] = useState<Project | null>(null);
+  const [projectId, setProjectId] = useState<string>("");
 
   useEffect(() => {
     const fetchProject = async () => {
       try {
-        const res = await fetch(`/api/projects/${params.id}`);
+        const { id } = await params;
+        setProjectId(id);
+        const res = await fetch(`/api/projects/${id}`);
         if (!res.ok) {
           notFound();
         }
@@ -54,7 +57,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
       }
     };
     fetchProject();
-  }, [params.id]);
+  }, [params]);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -104,7 +107,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
     
     setSaving(true);
     try {
-      const res = await fetch(`/api/projects/${params.id}`, {
+      const res = await fetch(`/api/projects/${projectId}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -177,7 +180,7 @@ export default function EditProjectPage({ params }: { params: { id: string } }) 
           <p className="text-muted-foreground">Update project details and settings</p>
         </div>
         <Button asChild variant="outline">
-          <Link href={`/projects/${params.id}`}>
+          <Link href={`/projects/${projectId}`}>
             <Eye className="h-4 w-4 mr-2" />
             View Project
           </Link>

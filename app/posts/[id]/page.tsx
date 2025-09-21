@@ -83,15 +83,15 @@ export default function PostDetailPage() {
         setLikeCount(likes.filter((l: any) => l.value === 1).length);
         setDislikeCount(likes.filter((l: any) => l.value === -1).length);
 
-        const userId = session?.user?.id as string | undefined;
-        if (userId) {
-          const userLike = likes.find((l: any) => l.userId === userId);
+        if (session?.user?.email) {
+          // Find user by email to get their likes
+          const userLike = likes.find((l: any) => l.user?.email === session.user?.email);
           setLikeState(userLike?.value || 0);
         }
       })
       .catch(() => setError("Failed to load post"))
       .finally(() => setPostLoading(false));
-  }, [postId, session?.user?.id]);
+  }, [postId, session?.user?.email]);
 
   if (error) {
     return (

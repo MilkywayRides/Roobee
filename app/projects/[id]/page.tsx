@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { MainLayout } from "@/components/layout/main-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,46 +14,100 @@ import { Github, Download, Star, Eye, Calendar, User, Coins, ArrowLeft } from "l
 import Link from "next/link";
 
 export default function ProjectDetailsPage({ params }: { params: Promise<{ id: string }> }) {
+  const router = useRouter();
   const [project, setProject] = useState<Project | null>(null);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  const [userCoins, setUserCoins] = useState<number>(0);
+  const [projectId, setProjectId] = useState<string>("");
+  const [isPurchased, setIsPurchased] = useState(false);
 
   useEffect(() => {
-    const fetchProject = async () => {
+    const fetchData = async () => {
       try {
         const { id } = await params;
-        const res = await fetch(`/api/projects/${id}`);
-        if (!res.ok) {
+        setProjectId(id);
+        
+        // Fetch project, user coins, and purchase status in parallel
+        const [projectRes, coinsRes, purchaseRes] = await Promise.all([
+          fetch(`/api/projects/${id}`),
+          fetch('/api/user/coins'),
+          fetch(`/api/projects/${id}/purchase-status`)
+        ]);
+        
+        if (!projectRes.ok) {
           notFound();
         }
-        const data = await res.json();
-        setProject(data);
+        
+        const projectData = await projectRes.json();
+        setProject(projectData);
+        
+        if (coinsRes.ok) {
+          const coinsData = await coinsRes.json();
+          setUserCoins(coinsData.coins);
+        }
+        
+        if (purchaseRes.ok) {
+          const purchaseData = await purchaseRes.json();
+          setIsPurchased(purchaseData.purchased || projectData.category === 'free');
+        }
       } catch (error) {
-        console.error("Error fetching project:", error);
+        console.error("Error fetching data:", error);
       } finally {
         setLoading(false);
       }
     };
-    fetchProject();
+    fetchData();
   }, [params]);
 
   const handlePurchase = async () => {
+    if (!project?.price) return;
+    
+    // Check if user has enough coins
+    if (userCoins < project.price) {
+      router.push('/upgrade');
+      return;
+    }
+    
     setPurchasing(true);
-    // Simulate purchase process
-    setTimeout(() => {
+    try {
+      const res = await fetch(`/api/projects/${projectId}/purchase`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      const data = await res.json();
+      
+      if (res.status === 402 && data.needsUpgrade) {
+        router.push('/upgrade');
+        return;
+      }
+      
+      if (res.ok) {
+        setUserCoins(data.remainingCoins);
+        setIsPurchased(true);
+        alert(`Purchase successful! ${data.coinsDeducted} coins deducted. You now have ${data.remainingCoins} coins remaining.`);
+      } else {
+        alert(data.error || 'Purchase failed');
+      }
+    } catch (error) {
+      console.error('Purchase error:', error);
+      alert('Purchase failed. Please try again.');
+    } finally {
       setPurchasing(false);
-      alert("Purchase successful! You can now access this project.");
-    }, 2000);
+    }
   };
 
   const getCategoryBadge = (category: string, price?: number) => {
     switch (category) {
       case "free":
-        return <Badge variant="secondary" className="bg-green-100 text-green-800">Free</Badge>;
+        return <Badge variant="secondary" className="bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200">Free</Badge>;
       case "paid":
-        return <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">{price} coins</Badge>;
+        return <Badge variant="secondary" className="bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200">{price} coins</Badge>;
       case "premium":
-        return <Badge variant="secondary" className="bg-purple-100 text-purple-800">{price} coins</Badge>;
+        return <Badge variant="secondary" className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200">{price} coins</Badge>;
       default:
         return null;
     }
@@ -175,20 +230,47 @@ export default function ProjectDetailsPage({ params }: { params: Promise<{ id: s
                   </>
                 ) : (
                   <>
-                    <div className="flex items-center gap-2 text-lg font-semibold">
-                      <Coins className="h-5 w-5 text-yellow-500" />
-                      {project.price} coins
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-lg font-semibold">
+                        <Coins className="h-5 w-5 text-yellow-500" />
+                        {project.price} coins
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        Your balance: {userCoins} coins
+                      </div>
                     </div>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-sm text-muted-foreground mb-4">
                       Purchase this project to get full access to all files and documentation.
                     </p>
-                    <Button 
-                      className="w-full" 
-                      onClick={handlePurchase}
-                      disabled={purchasing}
-                    >
-                      {purchasing ? "Processing..." : `Purchase for ${project.price} coins`}
-                    </Button>
+                    {userCoins < (project.price || 0) ? (
+                      <Button 
+                        className="w-full" 
+                        onClick={() => router.push('/upgrade')}
+                        variant="destructive"
+                      >
+                        <Coins className="h-4 w-4 mr-2" />
+                        Insufficient Coins - Upgrade
+                      </Button>
+                    ) : (
+                      isPurchased ? (
+                        <Button 
+                          asChild
+                          className="w-full"
+                        >
+                          <Link href={`/projects/${project.id}/code`}>
+                            View Code
+                          </Link>
+                        </Button>
+                      ) : (
+                        <Button 
+                          className="w-full" 
+                          onClick={handlePurchase}
+                          disabled={purchasing}
+                        >
+                          {purchasing ? "Processing..." : `Purchase for ${project.price} coins`}
+                        </Button>
+                      )
+                    )}
                   </>
                 )}
               </CardContent>

@@ -15,7 +15,7 @@ export async function GET() {
       // Only show free projects to guests
       console.log("[PROJECTS_PUBLIC] Fetching free projects for guest user");
       projects = await prisma.project.findMany({
-        where: { isFree: true },
+        where: { category: 'free' },
         include: { 
           files: { 
             select: { id: true, fileName: true, fileSize: true, appwriteId: true } 
@@ -25,7 +25,7 @@ export async function GET() {
       });
     } else {
       // Show all projects to signed-in users
-      console.log("[PROJECTS_PUBLIC] Fetching all projects for authenticated user:", session.user.id);
+      console.log("[PROJECTS_PUBLIC] Fetching all projects for authenticated user");
       projects = await prisma.project.findMany({
         include: { 
           files: { 
@@ -54,4 +54,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-} 
+}

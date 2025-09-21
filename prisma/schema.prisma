@@ -35,9 +35,10 @@ model User {
   passwordResetTokens PasswordResetToken[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
-  coin          Int       @default(0)
+  coin          Int       @default(30)
   projects      Project[]
   uploadedFiles ProjectFile[]
+  purchases     Purchase[]
   posts         Post[]
   likes         Like[]
   following     Follow[] @relation("Follower")
@@ -102,8 +103,34 @@ model Project {
   owner       User      @relation(fields: [ownerId], references: [id])
   ownerId     String
   files       ProjectFile[]
+  purchases   Purchase[]
+  cache       RepositoryCache?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+}
+
+model Purchase {
+  id        String   @id @default(cuid())
+  userId    String
+  projectId String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  project   Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  
+  @@unique([userId, projectId])
+}
+
+model RepositoryCache {
+  id          String   @id @default(cuid())
+  projectId   String   @unique
+  owner       String
+  repo        String
+  isPrivate   Boolean  @default(false)
+  files       Json     // Stored file structure
+  lastSync    DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  project     Project  @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
 model ProjectFile {

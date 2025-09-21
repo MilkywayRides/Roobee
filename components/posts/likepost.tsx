@@ -30,14 +30,14 @@ const LikePost = () => {
       setLikeCount(likes.filter((l: any) => l.value === 1).length);
       setDislikeCount(likes.filter((l: any) => l.value === -1).length);
 
-      if (session?.user?.id) {
-        const userLike = likes.find((l: any) => l.userId === session.user.id);
+      if (session?.user?.email) {
+        const userLike = likes.find((l: any) => l.user?.email === session.user?.email);
         setLikeState(userLike?.value || 0);
       }
     } catch (error) {
       console.error("Failed to fetch likes:", error);
     }
-  }, [postId, session?.user?.id]);
+  }, [postId, session?.user?.email]);
 
   useEffect(() => {
     fetchLikes();
@@ -50,7 +50,7 @@ const LikePost = () => {
     value: 1 | -1,
     event: React.MouseEvent<HTMLButtonElement>,
   ) => {
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       router.push("/login");
       return;
     }
@@ -122,7 +122,7 @@ const LikePost = () => {
     }, 300);
 
     setSyncTimeout(newTimeout);
-  }, [likeState, likeCount, dislikeCount, session?.user?.id, router, postId, syncTimeout]);
+  }, [likeState, likeCount, dislikeCount, session?.user?.email, router, postId, syncTimeout]);
 
   // Clean up timeout on unmount
   useEffect(() => {
@@ -133,7 +133,7 @@ const LikePost = () => {
     };
   }, [syncTimeout]);
 
-  const isButtonDisabled = !session?.user?.id;
+  const isButtonDisabled = !session?.user?.email;
 
   return (
     <div className="flex items-center gap-4 mb-8">

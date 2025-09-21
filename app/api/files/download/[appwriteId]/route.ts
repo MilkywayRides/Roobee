@@ -30,7 +30,7 @@ export async function GET(
     }
 
     // Check if user has access to the file
-    if (!file.isPublic && !file.project.isFree) {
+    if (!file.isPublic && file.project.category !== 'free') {
       // TODO: Check if user has purchased the project
       return NextResponse.json({ error: 'Access denied' }, { status: 403 });
     }

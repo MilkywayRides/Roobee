@@ -7,9 +7,19 @@ import { Session } from "next-auth";
 export async function GET() {
   try {
     const session = await getServerSession(authOptions) as Session | null;
-    if (!session?.user || !["ADMIN", "SUPER_ADMIN"].includes(session.user.role!)) {
+    
+    if (!session?.user?.email) {
       return new NextResponse("Unauthorized", { status: 401 });
     }
+    
+    const user = await prisma.user.findUnique({
+      where: { email: session.user.email }
+    })
+    
+    if (!user || !["ADMIN", "SUPER_ADMIN"].includes(user.role)) {
+      return new NextResponse("Unauthorized", { status: 401 });
+    }
+    
     const projects = await prisma.project.findMany({
       include: { files: { select: { id: true } } },
       orderBy: { createdAt: "desc" },
@@ -19,4 +29,4 @@ export async function GET() {
     console.error("[PROJECTS_ALL]", error);
     return new NextResponse("Internal error", { status: 500 });
   }
-} 
+}

@@ -49,7 +49,7 @@ export function AvatarButton({ className }: AvatarButtonProps) {
     return null;
   }
 
-  const isAdmin = session.user.role === "ADMIN" || session.user.role === "SUPER_ADMIN";
+  const isAdmin = false; // Role check removed for now
 
   return (
     <div className={className} ref={dropdownRef}>
@@ -77,11 +77,7 @@ export function AvatarButton({ className }: AvatarButtonProps) {
               <p className="text-xs leading-none text-muted-foreground">
                 {session.user.email}
               </p>
-              {session.user.role && (
-                <p className="text-xs leading-none text-muted-foreground">
-                  Role: {session.user.role}
-                </p>
-              )}
+
             </div>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />

@@ -107,7 +107,7 @@ export default function ImportProjectPage() {
   }, [status, authAttempted]);
 
   const handleImport = async () => {
-    if (!selectedRepo || !session?.user?.id) return;
+    if (!selectedRepo || !session?.user?.email) return;
     
     setImporting(true);
     try {
@@ -122,7 +122,6 @@ export default function ImportProjectPage() {
           category,
           price: category !== "free" ? price : undefined,
           githubRepo: selectedRepo.html_url,
-          ownerId: session.user.id,
         }),
       });
       

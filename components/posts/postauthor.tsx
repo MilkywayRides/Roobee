@@ -35,16 +35,16 @@ const PostAuthor = () => {
   }, [postId]);
 
   useEffect(() => {
-    if (!post?.author?.id || !session?.user?.id) return;
+    if (!post?.author?.id || !session?.user?.email) return;
 
     fetch(`/api/users/${post.author.id}/follow`, { method: "GET" })
       .then((res) => res.json())
       .then((data) => setIsFollowing(data.isFollowing))
       .catch(() => setIsFollowing(false));
-  }, [post?.author?.id, session?.user?.id]);
+  }, [post?.author?.id, session?.user?.email]);
 
   const handleFollow = async () => {
-    if (!session?.user?.id) {
+    if (!session?.user?.email) {
       router.push("/login");
       return;
     }
